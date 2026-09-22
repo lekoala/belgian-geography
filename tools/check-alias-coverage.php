@@ -85,6 +85,10 @@ $candidates = [
     'Butgenbach' => 'Bütgenbach',
     'La Calamine' => 'Kelmis',
     'Saint-Vith' => 'Sankt Vith',
+    // Usual short forms of Brussels municipalities (fr/nl co-official).
+    'Molenbeek' => 'Molenbeek-Saint-Jean',
+    'Saint-Josse' => 'Saint-Josse-ten-Noode',
+    'Sint-Joost' => 'Sint-Joost-ten-Node',
 ];
 
 $belgium = Belgium::load();

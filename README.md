@@ -35,6 +35,15 @@ current BeST name, and one already covered by BeST is simply inert. Archaic
 spellings stay out: historical SEO slugs such as an obsolete spelling belong to
 the application that served them, not to a current Belgian reference library.
 
+`resources/places.php` is a second, even smaller hand-maintained layer of
+**supplementary postal places**: current localities BeST does not restitute
+through its `postname_*` fields. For 1020, 1120 and 1130 BeST only publishes
+`BRUXELLES/BRUSSEL`, while the City of Brussels and bpost identify these postal
+areas as Laeken/Laken, Neder-Over-Heembeek and Haren. These are real
+`PostalPlace` objects, not aliases, and never municipalities. A supplement may only
+name a locality of a postal code / municipality relation BeST already has, and it
+is inert once BeST publishes one of its names for that relation.
+
 ## Install
 
 ```bash
@@ -69,6 +78,11 @@ foreach ($be->postalPlacesByName('Jambes') as $place) {
 foreach ($be->postalPlacesByName('Koolkerke') as $place) {
     echo $place->postalCode; // 8000, sub-municipality of Brugge
 }
+
+$laeken = $be->postalPlacesByName('Laeken')[0]; // supplementary place, see Design
+echo $laeken->postalCode;          // 1020
+echo $laeken->municipalityNisCode; // 21004, City of Brussels
+$be->municipalityByName('Laeken'); // null: a locality, not a municipality
 
 foreach ($be->postalCodesForRegion('BE-BRU') as $postalCode) {
     echo $postalCode->code; // 1000, 1020, 1030, …
@@ -259,7 +273,7 @@ underlying addresses at load time. `data.php` must never contain computed data.
 ### Partial / custom snapshots
 
 `Belgium::load($path, usePackagedReferences: false)` loads a snapshot without
-falling back to the packaged `aliases.php` / `provinces.php` / `regions.php`.
+falling back to the packaged `aliases.php` / `places.php` / `provinces.php` / `regions.php`.
 Companion files placed next to the snapshot are still loaded. This keeps
 fixtures and partial datasets (which may not contain every municipality the
 packaged alias layer references) loadable; with the default `true`, those

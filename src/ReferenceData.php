@@ -8,10 +8,10 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
 
 /**
  * Loads the hand-maintained companion layers (resources/aliases.php,
- * resources/provinces.php and resources/regions.php), looking next to the
- * snapshot file first and falling back to the packaged resources. The generated
- * centers companion is the exception: it is only read next to the snapshot (see
- * centers()).
+ * resources/places.php, resources/provinces.php and resources/regions.php),
+ * looking next to the snapshot file first and falling back to the packaged
+ * resources. The generated centers companion is the exception: it is only read
+ * next to the snapshot (see centers()).
  */
 final class ReferenceData
 {
@@ -93,6 +93,20 @@ final class ReferenceData
         }
 
         return $aliases;
+    }
+
+    /**
+     * Supplementary postal places (resources/places.php): localities BeST does
+     * not restitute through postname_*, as [municipality NIS code, names] tuples
+     * keyed by postal code. Relations are validated by SupplementaryPlaces::merge().
+     *
+     * @return array<string, list<array{string, array<string,string|null>}>>
+     */
+    public static function places(string $dataFile, bool $usePackagedReferences = true): array
+    {
+        $placeFile = self::resolveCompanionFile($dataFile, 'places.php', $usePackagedReferences);
+
+        return $placeFile === null ? [] : SupplementaryPlaces::clean(require $placeFile, $placeFile);
     }
 
     /**

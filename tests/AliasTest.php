@@ -44,6 +44,16 @@ final class AliasTest extends TestCase
         $this->assertSame('44021', $belgium->municipalityByName('Gent')?->nisCode);
     }
 
+    public function test_short_forms_of_brussels_municipalities_resolve(): void
+    {
+        $belgium = Belgium::load();
+
+        $this->assertSame('21012', $belgium->municipalityByName('Molenbeek')?->nisCode);
+        $this->assertSame('21014', $belgium->municipalityByName('Saint-Josse')?->nisCode);
+        $this->assertSame('21014', $belgium->municipalityByName('Sint-Joost')?->nisCode);
+        $this->assertSame('21010', $belgium->municipalityByName('Jette')?->nisCode);
+    }
+
     public function test_merged_tongeren_borgloon_keeps_its_french_search_alias(): void
     {
         $belgium = Belgium::load();

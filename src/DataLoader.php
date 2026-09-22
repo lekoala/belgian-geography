@@ -9,7 +9,9 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
 /**
  * Reads and validates the generated snapshot (resources/data.php) together
  * with the hand-maintained layers (resources/aliases.php,
- * resources/provinces.php and resources/regions.php).
+ * resources/places.php, resources/provinces.php and resources/regions.php).
+ * Supplementary places are merged into postal_places here, so Belgium indexes
+ * them as ordinary PostalPlace objects.
  *
  * Snapshot records are tuples: a municipality is [region, names] and a
  * locality is [municipality NIS code, names]; locale keys inside names stay
@@ -70,7 +72,10 @@ final class DataLoader
         return [
             'meta' => $cleanMeta,
             'municipalities' => $cleanMunicipalities,
-            'postal_places' => self::cleanPostalPlaces($postalPlaces, $file, $cleanMunicipalities),
+            'postal_places' => SupplementaryPlaces::merge(
+                self::cleanPostalPlaces($postalPlaces, $file, $cleanMunicipalities),
+                ReferenceData::places($file, $usePackagedReferences),
+            ),
             'centers' => ReferenceData::centers($file),
             'aliases' => ReferenceData::aliases($file, $usePackagedReferences),
             'provinces' => ReferenceData::provinces($file, $usePackagedReferences),
