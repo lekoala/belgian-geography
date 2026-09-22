@@ -48,6 +48,17 @@ final class PlaceLabelTest extends TestCase
         $this->assertSame('Halle', $belgium->placeLabel($place, 'fr', 'nl'));
     }
 
+    public function test_display_label_returns_null_without_a_matching_locale(): void
+    {
+        $belgium = Belgium::load();
+        $place = $belgium->postalCode('1500')?->places()[0] ?? null;
+        $this->assertNotNull($place);
+
+        // 1500 "HALLE" has no French name: no implicit first-locale fallback.
+        $this->assertNull($place->name('fr'));
+        $this->assertNull($belgium->placeLabel($place, 'fr'));
+    }
+
     public function test_locality_search_is_case_insensitive(): void
     {
         $belgium = Belgium::load();

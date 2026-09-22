@@ -143,7 +143,6 @@ final class Generator
         return [
             'schema_version' => DataLoader::SCHEMA_VERSION,
             'meta' => [
-                'generated_at' => gmdate(DATE_ATOM),
                 'source' => 'FPS BOSA BeST Address - OpenAddresses CSV exports',
                 'license' => 'CC BY 4.0',
                 'sources' => $sources,
@@ -203,7 +202,6 @@ final class Generator
         return [
             'schema_version' => ReferenceData::CENTERS_SCHEMA_VERSION,
             'meta' => [
-                'generated_at' => gmdate(DATE_ATOM),
                 'source' => 'FPS BOSA BeST Address - OpenAddresses CSV exports',
                 'license' => 'CC BY 4.0',
                 'sources' => $sources,
@@ -220,9 +218,33 @@ final class Generator
             return;
         }
 
+        // A reference source must be self-consistent: a NIS code never changes
+        // region, and a locale never carries two different current names. Rather
+        // than silently keeping the first value, refuse the whole generation.
+        $existing = $this->municipalities[$nisCode];
+        if ($existing['region'] !== $region) {
+            throw new RuntimeException(sprintf(
+                'Inconsistent BeST data: municipality "%s" appears in regions "%s" and "%s".',
+                $nisCode,
+                $existing['region'],
+                $region,
+            ));
+        }
+
         foreach ($names as $locale => $name) {
-            if (($this->municipalities[$nisCode]['names'][$locale] ?? '') === '') {
+            $current = $existing['names'][$locale] ?? '';
+            if ($current === '') {
                 $this->municipalities[$nisCode]['names'][$locale] = $name;
+                continue;
+            }
+            if ($current !== $name) {
+                throw new RuntimeException(sprintf(
+                    'Inconsistent BeST data: municipality "%s" has conflicting %s names "%s" and "%s".',
+                    $nisCode,
+                    $locale,
+                    $current,
+                    $name,
+                ));
             }
         }
     }

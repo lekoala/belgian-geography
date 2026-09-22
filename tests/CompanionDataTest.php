@@ -57,6 +57,18 @@ final class CompanionDataTest extends TestCase
         $this->assertEqualsWithDelta(4.4025, $coordinates->longitude, 0.000_01);
     }
 
+    public function test_centers_never_fall_back_to_the_packaged_snapshot(): void
+    {
+        // A snapshot copied elsewhere without its sibling centers.php must not
+        // pick up the packaged centers: computed data belongs to its own snapshot.
+        $file = $this->writeFullSnapshotCopy();
+
+        $belgium = Belgium::load($file);
+        $this->assertSame('Namur', $belgium->municipality('92094')?->name('fr'));
+        $this->assertNull($belgium->municipality('92094')?->coordinates);
+        $this->assertNull($belgium->region('BE-WAL')?->coordinates);
+    }
+
     public function test_centers_for_unknown_municipalities_are_ignored(): void
     {
         $file = $this->writePartialSnapshot();
@@ -89,6 +101,16 @@ final class CompanionDataTest extends TestCase
             file_put_contents($this->directory . '/centers.php', '<?php return ' . var_export($data, true) . ';')
             !== false,
         );
+    }
+
+    private function writeFullSnapshotCopy(): string
+    {
+        $this->directory = sys_get_temp_dir() . '/belgian-geography-' . bin2hex(random_bytes(4));
+        self::assertTrue(mkdir($this->directory));
+        $file = $this->directory . '/data.php';
+        self::assertTrue(copy(dirname(__DIR__) . '/resources/data.php', $file));
+
+        return $file;
     }
 
     private function writePartialSnapshot(): string

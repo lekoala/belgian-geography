@@ -10,13 +10,13 @@ use PHPUnit\Framework\TestCase;
 
 final class AliasTest extends TestCase
 {
-    public function test_every_alias_resolves_to_its_documented_municipality(): void
+    public function test_every_search_alias_resolves_to_its_documented_municipality(): void
     {
         $belgium = Belgium::load();
         $aliases = require dirname(__DIR__) . '/resources/aliases.php';
 
-        $this->assertCount(12, $aliases);
-
+        // The number of aliases is deliberately not asserted: the layer is a
+        // search convenience, not a contract.
         foreach ($aliases as $alias => $nisCode) {
             $this->assertSame($alias, Normalizer::key($alias), "alias '{$alias}' must be pre-normalized");
             $municipality = $belgium->municipalityByName($alias);
@@ -34,7 +34,7 @@ final class AliasTest extends TestCase
         }
     }
 
-    public function test_english_exonyms_resolve_to_the_native_municipality(): void
+    public function test_english_search_aliases_resolve_to_the_native_municipality(): void
     {
         $belgium = Belgium::load();
 
@@ -44,7 +44,7 @@ final class AliasTest extends TestCase
         $this->assertSame('44021', $belgium->municipalityByName('Gent')?->nisCode);
     }
 
-    public function test_merged_tongeren_borgloon_keeps_its_french_exonym(): void
+    public function test_merged_tongeren_borgloon_keeps_its_french_search_alias(): void
     {
         $belgium = Belgium::load();
 

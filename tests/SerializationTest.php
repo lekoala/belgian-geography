@@ -82,11 +82,13 @@ final class SerializationTest extends TestCase
         $jambes = $belgium->postalPlacesByName('Jambes')[0];
         $this->assertNull($jambes->name('nl'));
         $this->assertSame('Jambes', $jambes->displayName('nl', 'fr'));
-        $this->assertSame('Jambes', $jambes->displayName('de'));
+        // No implicit first-locale fallback: an absent locale yields null.
+        $this->assertNull($jambes->displayName('de'));
 
         $municipality = $belgium->municipality('92094');
         $this->assertNotNull($municipality);
         $this->assertSame('Namur', $municipality->displayName('xx', 'fr'));
         $this->assertSame('Namen', $municipality->displayName('nl'));
+        $this->assertNull($municipality->displayName('en'));
     }
 }

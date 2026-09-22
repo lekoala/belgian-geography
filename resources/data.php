@@ -5,7 +5,6 @@ declare(strict_types=1);
 return [
 'schema_version' => 1,
 'meta' => [
-  'generated_at' => '2026-09-22T15:13:30+00:00',
   'source' => 'FPS BOSA BeST Address - OpenAddresses CSV exports',
   'license' => 'CC BY 4.0',
   'sources' => [

@@ -140,7 +140,9 @@ final class Belgium
      * Display label for a locality. When the locality name is the same word as
      * its municipality name in the same locale (case aside), the municipality
      * spelling is reused for presentation; the source spelling stays available
-     * through PostalPlace::name()/displayName().
+     * through PostalPlace::name()/displayName(). Only the requested locale and
+     * the explicit fallbacks are used: returns null when none is available, with
+     * no implicit locale policy.
      */
     public function placeLabel(PostalPlace $place, string $locale, string ...$fallbacks): ?string
     {
@@ -151,7 +153,6 @@ final class Belgium
                 break;
             }
         }
-        $resolved ??= array_key_first($place->names->all());
         if ($resolved === null) {
             return null;
         }

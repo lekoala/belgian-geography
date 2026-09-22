@@ -9,23 +9,29 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
 /**
  * Loads the hand-maintained companion layers (resources/aliases.php,
  * resources/provinces.php and resources/regions.php), looking next to the
- * snapshot file first and falling back to the packaged resources.
+ * snapshot file first and falling back to the packaged resources. The generated
+ * centers companion is the exception: it is only read next to the snapshot (see
+ * centers()).
  */
 final class ReferenceData
 {
     public const int CENTERS_SCHEMA_VERSION = 1;
 
     /**
-     * Loads the generated centers companion (resources/centers.php): one
-     * approximate municipality center per NIS code, as [lat, lon, weight]
+     * Loads the generated centers companion (centers.php next to the snapshot):
+     * one approximate municipality center per NIS code, as [lat, lon, weight]
      * where weight is the number of contributing BeST address points.
+     *
+     * Computed data belongs to the snapshot it was derived from, so unlike the
+     * hand-maintained companions this never falls back to the packaged file: a
+     * snapshot without a sibling centers.php simply has no coordinates.
      *
      * @return array<string, array{0:float,1:float,2:int}>
      */
-    public static function centers(string $dataFile, bool $usePackagedReferences = true): array
+    public static function centers(string $dataFile): array
     {
-        $centersFile = self::resolveCompanionFile($dataFile, 'centers.php', $usePackagedReferences);
-        if ($centersFile === null || !is_file($centersFile)) {
+        $centersFile = dirname($dataFile) . '/centers.php';
+        if (!is_file($centersFile)) {
             return [];
         }
 

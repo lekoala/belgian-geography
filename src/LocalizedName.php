@@ -30,8 +30,9 @@ final readonly class LocalizedName implements JsonSerializable
     }
 
     /**
-     * Strict lookup with an explicit fallback chain.
-     * Returns the first available fallback, or the first known name as a last resort.
+     * Strict lookup with an explicit fallback chain: only the requested locale
+     * and the given fallbacks are considered. Returns null when none of them is
+     * available, so no implicit locale policy leaks into the result.
      */
     public function displayName(string $locale, string ...$fallbacks): ?string
     {
@@ -42,7 +43,7 @@ final readonly class LocalizedName implements JsonSerializable
             }
         }
 
-        return $this->first();
+        return null;
     }
 
     /** @return array<string, string> */
@@ -67,13 +68,6 @@ final readonly class LocalizedName implements JsonSerializable
     public function aliases(): array
     {
         return array_values(array_unique($this->names));
-    }
-
-    public function first(): ?string
-    {
-        $locale = array_key_first($this->names);
-
-        return $locale === null ? null : $this->names[$locale];
     }
 
     public function matches(string $value): bool

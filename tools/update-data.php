@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use LeKoala\BelgianGeography\Tools\Exporter;
 use LeKoala\BelgianGeography\Tools\Generator;
+use LeKoala\BelgianGeography\Tools\SnapshotWriter;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 if (!class_exists(ZipArchive::class)) {
@@ -24,8 +25,10 @@ if ($centersOutput === null) {
     $centersOutput = dirname($output) . '/centers.php';
 }
 $sourceDir = $options['source-dir'] ?? null;
-$tempDir = sys_get_temp_dir() . '/belgian-geography-' . bin2hex(random_bytes(5));
-if (!mkdir($tempDir, 0777, true) && !is_dir($tempDir)) {
+// Only downloads need a scratch directory; with --source-dir the archives are
+// read in place.
+$tempDir = $sourceDir === null ? sys_get_temp_dir() . '/belgian-geography-' . bin2hex(random_bytes(5)) : null;
+if ($tempDir !== null && !mkdir($tempDir, 0777, true) && !is_dir($tempDir)) {
     throw new RuntimeException('Could not create temporary directory.');
 }
 
@@ -95,18 +98,15 @@ try {
         ];
     }
 
+    // Build both snapshots before touching disk, then replace them as one unit.
     $data = $generator->build($metadata);
-    $contents = Exporter::export($data);
-    if (file_put_contents($output, $contents) === false) {
-        throw new RuntimeException(sprintf('Could not write %s.', $output));
-    }
-
     $centers = $generator->buildCenters($metadata);
-    $centersContents = Exporter::exportCenters($centers);
-    if (file_put_contents($centersOutput, $centersContents) === false) {
-        throw new RuntimeException(sprintf('Could not write %s.', $centersOutput));
-    }
+    SnapshotWriter::write([
+        $output => Exporter::export($data),
+        $centersOutput => Exporter::exportCenters($centers),
+    ]);
 
+    fwrite(STDOUT, sprintf("Generated at %s (files stay deterministic).\n", gmdate(DATE_ATOM)));
     fwrite(STDOUT, sprintf(
         "Wrote %s (%d municipalities, %d postal codes).\n",
         $output,
@@ -119,7 +119,7 @@ try {
         count($centers['municipalities']),
     ));
 } finally {
-    if ($sourceDir === null && is_dir($tempDir)) {
+    if ($tempDir !== null && is_dir($tempDir)) {
         foreach (glob($tempDir . '/*') ?: [] as $file) {
             @unlink($file);
         }

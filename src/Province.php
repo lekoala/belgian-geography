@@ -21,7 +21,7 @@ final readonly class Province implements JsonSerializable
         return $this->names[strtolower($locale)] ?? null;
     }
 
-    public function displayName(string $locale, string ...$fallbacks): string
+    public function displayName(string $locale, string ...$fallbacks): ?string
     {
         foreach ([$locale, ...$fallbacks] as $candidate) {
             $name = $this->names[strtolower($candidate)] ?? null;
@@ -30,7 +30,7 @@ final readonly class Province implements JsonSerializable
             }
         }
 
-        return $this->names['nl'];
+        return null;
     }
 
     /** @return array{isoCode:string,region:string,names:array{nl:string,fr:string,en:string},coordinates?:array{latitude:float,longitude:float}} */

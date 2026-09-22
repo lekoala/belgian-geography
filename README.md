@@ -22,14 +22,18 @@ Municipality identity is the **NIS code**, never a localized name or a postal co
 French/Dutch/German BeST names are indexed as equivalent lookup names.
 
 On top of the generated snapshot, `resources/aliases.php` holds a minimal,
-versioned alias layer for common exonyms the BeST snapshot does not contain:
-English usage that differs from the native name (`Brussels`, `Antwerp`,
-`Ghent`), plus French/Dutch/German alternate names attested on Wikipedia
-(`Aerschot`, `Arel`, `Tongres`, …). An entry is kept only when attested *and*
-missing from BeST (verified with `tools/check-alias-coverage.php`); at load
-time an alias never shadows a current BeST name. Archaic spellings stay out:
-historical SEO slugs such as an obsolete spelling belong to the application
-that served them, not to a current Belgian reference library.
+versioned layer of **search aliases** the BeST snapshot does not contain: English
+usage that differs from the native name (`Brussels`, `Antwerp`, `Ghent`), plus
+French/Dutch/German search spellings (`Aerschot`, `Arel`, `Tongres`, …). These are
+lookup helpers, never names of record: municipality identity and current names
+come from BeST alone. Statbel 2025, for instance, publishes `24001` as *Aarschot*
+in NL and FR, and `73111` as *Tongeren-Borgloon* / *Tongres-Looz*, so `aerschot`
+or `tongres` remain search aliases rather than current names. An entry is kept
+only when it is a plausible search spelling *and* missing from BeST (verified with
+`tools/check-alias-coverage.php`); at load time a search alias never shadows a
+current BeST name, and one already covered by BeST is simply inert. Archaic
+spellings stay out: historical SEO slugs such as an obsolete spelling belong to
+the application that served them, not to a current Belgian reference library.
 
 ## Install
 
@@ -76,7 +80,8 @@ echo $be->province('BE-VWV')?->name('en'); // West Flanders
 echo $be->regionForMunicipality('21004')?->name('fr'); // Bruxelles
 echo $be->provinceForMunicipality('21004');            // null: Brussels is a region, not a province
 
-// Fallback-aware label for UI (name() stays strict):
+// Fallback-aware label for UI: only the requested locale and the explicit
+// fallbacks are used (name() stays strict, and no implicit locale is added):
 echo $be->municipality('92094')?->displayName('de', 'fr'); // Namur
 
 echo json_encode($be->municipality('92094'));
@@ -115,7 +120,7 @@ present it as an empty result:
 ```php
 $matches = $be->municipalitiesByName('Saint-Nicolas');
 
-// Ambiguous: 46021 (Sint-Niklaas, FR exonym) and 62093 (Liège).
+// Ambiguous: 46021 (Sint-Niklaas, FR search alias) and 62093 (Liège).
 foreach ($matches as $municipality) {
     $province = $be->provinceForMunicipality($municipality->nisCode);
     echo $municipality->displayName('fr')
@@ -218,8 +223,9 @@ Regions are represented by `BE-VLG`, `BE-BRU` and `BE-WAL`. There are exactly
 Brussels-Capital Region is a region, **not** a province, so
 `provinceForMunicipality('21004')` returns `null` while
 `regionForMunicipality('21004')` returns `BE-BRU`. Every model exposes
-`toArray()` / `JsonSerializable`, plus a fallback-aware `displayName()` next
-to the strict `name()`.
+`toArray()` / `JsonSerializable`, plus an explicit-fallback `displayName()`
+next to the strict `name()`: only the requested locale and the given fallbacks
+are considered, and an unmatched request returns `null` (no implicit locale).
 Combined BeST postal labels (`BRUGGE/Koolkerke`) are split so every locality —
 including sub-municipalities — resolves to its municipality and postal code.
 Locality label casing is preserved from the source: BeST publishes some Flemish
@@ -242,11 +248,13 @@ companion, `resources/centers.php`, with its own `schema_version`:
 ],
 ```
 
-It is optional: a custom snapshot without a `centers.php` simply yields `null`
-coordinates, while the package ships centers for every municipality. The address
-count is internal — it lets the province and region centers be recomposed as the
-barycenter of the underlying addresses at load time. `data.php` must never
-contain computed data.
+It is optional and **local to the snapshot**: centers are read from the
+`centers.php` sitting next to the loaded `data.php`, never from the packaged
+fallback. A snapshot copied elsewhere without its sibling `centers.php` therefore
+yields `null` coordinates, even with packaged references enabled — while the
+package ships centers for every municipality. The address count is internal — it
+lets the province and region centers be recomposed as the barycenter of the
+underlying addresses at load time. `data.php` must never contain computed data.
 
 ### Partial / custom snapshots
 
@@ -255,7 +263,8 @@ falling back to the packaged `aliases.php` / `provinces.php` / `regions.php`.
 Companion files placed next to the snapshot are still loaded. This keeps
 fixtures and partial datasets (which may not contain every municipality the
 packaged alias layer references) loadable; with the default `true`, those
-packaged references apply.
+packaged references apply. The generated `centers.php` is the exception: it is
+only ever read next to the snapshot, so it never leaks across snapshots.
 
 ## Updating the bundled data
 
@@ -267,7 +276,9 @@ archives:
 composer data:update
 ```
 
-The updater downloads:
+`tools/` is excluded from the Composer dist, so this is a maintainer command for
+source checkouts only — consumers use the snapshot shipped in the package. The
+updater downloads:
 
 - `openaddress-bevlg.zip`
 - `openaddress-bebru.zip`
@@ -296,8 +307,9 @@ For locality labels, the generator consumes the current flat BOSA/OpenAddresses 
 ## Data provenance
 
 The source exports are published by FPS BOSA from the authentic regional address
-registers and are refreshed weekly. Generated data records its generation timestamp,
-source URLs and SHA-256 hashes.
+registers and are refreshed weekly. Generated data records its source URLs and
+SHA-256 hashes; the files are deterministic — identical archives produce
+byte-identical output, so no generation timestamp is stored.
 
 See [DATA-LICENSE.md](DATA-LICENSE.md) for attribution and data licensing.
 
@@ -310,8 +322,8 @@ This package intentionally does **not** provide:
 - exact geometry: only an approximate municipality center (and province/region
   centers recomposed from it) is provided, never polygons, bounding boxes,
   distances or cadastral coordinates,
-- a manually curated list of old/archaic spellings (only current alternate
-  names attested on Wikipedia are aliased, see Design).
+- a curated list of reference names: only search aliases are added, never names
+  of record, and old/archaic spellings stay out (see Design).
 
 Those concerns can be added by separate packages or application code if a real use case
 appears. The goal here is a boring, reliable Belgian reference layer.

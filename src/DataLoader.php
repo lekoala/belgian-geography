@@ -34,7 +34,7 @@ final class DataLoader
     {
         if (!is_file($file)) {
             throw new DataNotGenerated(sprintf(
-                'Belgian geography data not found at %s. Run "composer data:update" before packaging a release.',
+                'Belgian geography data not found at %s. The package ships a generated snapshot; maintainers regenerate it from a source checkout with "php tools/update-data.php".',
                 $file,
             ));
         }
@@ -71,7 +71,7 @@ final class DataLoader
             'meta' => $cleanMeta,
             'municipalities' => $cleanMunicipalities,
             'postal_places' => self::cleanPostalPlaces($postalPlaces, $file, $cleanMunicipalities),
-            'centers' => ReferenceData::centers($file, $usePackagedReferences),
+            'centers' => ReferenceData::centers($file),
             'aliases' => ReferenceData::aliases($file, $usePackagedReferences),
             'provinces' => ReferenceData::provinces($file, $usePackagedReferences),
             'regions' => ReferenceData::regions($file, $usePackagedReferences),

@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /*
- * One-shot analysis aid (dev only, export-ignore): confronts common exonyms
- * collected from Wikipedia (EN list of cities, language-facility municipalities,
- * Wallonia list) with the generated BeST snapshot.
+ * One-shot analysis aid (dev only, export-ignore): confronts common search
+ * aliases collected from Wikipedia (EN list of cities, language-facility
+ * municipalities, Wallonia list) with the generated BeST snapshot.
  *
  * Usage: php tools/check-alias-coverage.php [--emit]
  *   default : prints a report per candidate (resolved-correct / resolved-wrong /
@@ -13,9 +13,9 @@ declare(strict_types=1);
  *   --emit  : prints PHP rows "alias-key => NIS" for the unresolved candidates,
  *             ready for manual review into resources/aliases.php.
  *
- * Rule (README): keep an alias only when it is attested as a current alternate
- * name AND missing from the BeST index. Never emit a row that would shadow a
- * current BeST name — Belgium::municipalityByName() already resolves those.
+ * Rule (README): keep a search alias only when it is a plausible search spelling
+ * AND missing from the BeST index. Never emit a row that would shadow a current
+ * BeST name — Belgium::municipalityByName() already resolves those.
  */
 
 use LeKoala\BelgianGeography\Belgium;
@@ -31,7 +31,7 @@ $candidates = [
     'Antwerp' => 'Antwerpen',
     'Ghent' => 'Gent',
     'Ypres' => 'Ieper',
-    // French exonyms of Flemish municipalities (EN cities page).
+    // French search aliases of Flemish municipalities (EN cities page).
     'Alost' => 'Aalst',
     'Aerschot' => 'Aarschot',
     'Anvers' => 'Antwerpen',
@@ -48,7 +48,7 @@ $candidates = [
     'Ostende' => 'Oostende',
     'Renaix' => 'Ronse',
     'Tongres' => 'Tongeren',
-    // Dutch exonyms of Walloon municipalities (EN cities + Wallonia pages).
+    // Dutch search aliases of Walloon municipalities (EN cities + Wallonia pages).
     'Aarlen' => 'Arlon',
     'Bastenaken' => 'Bastogne',
     'Edingen' => 'Enghien',
@@ -62,7 +62,7 @@ $candidates = [
     'Moeskroen' => 'Mouscron',
     'Vloesberg' => 'Flobecq',
     "s-Gravenbrakel" => 'Braine-le-Comte',
-    // German exonyms (EN cities + Wallonia pages).
+    // German search aliases (EN cities + Wallonia pages).
     'Arel' => 'Arlon',
     'Löwen' => 'Leuven',
     'Brüssel' => 'Bruxelles',
@@ -73,7 +73,7 @@ $candidates = [
     'Blieberg' => 'Plombières',
     'Welkenraat' => 'Welkenraedt',
     'Welkenrath' => 'Welkenraedt',
-    // French exonyms of facility / German-area municipalities.
+    // French search aliases of facility / German-area municipalities.
     'Biévène' => 'Bever',
     'Messines' => 'Mesen',
     'Espierres-Helchin' => 'Spiere-Helkijn',
