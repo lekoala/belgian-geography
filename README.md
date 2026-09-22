@@ -164,9 +164,6 @@ if ($city === null) {
 }
 ```
 
-Archaic or renamed slugs (`blankenberghe`, `rethy`, …) are out of scope and stay
-in the application's own redirect map (see Scope).
-
 ### Important: postal codes are not municipality IDs
 
 The model intentionally keeps postal codes and municipalities separate. Their relation
