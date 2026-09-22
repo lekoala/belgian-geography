@@ -1,0 +1,38 @@
+# Ensure LF line endings on every checkout, regardless of core.autocrlf.
+# The project mandates LF via .editorconfig.
+* text=auto
+*.php text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.dist text eol=lf
+*.csv text eol=lf
+*.neon text eol=lf
+*.editorconfig text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Binary archives handled by the data updater (never committed, but guarded).
+*.xls binary
+*.xlsx binary
+*.ods binary
+*.zip binary
+
+# Large generated runtime snapshot: keep it in the package, hide it from diffs.
+# (Aligned with baresheet conventions + linguist flag specific to this repo.)
+/resources/data.php linguist-generated=true
+
+# Keep the Composer dist focused on runtime: src/ + resources/data.php + docs.
+# (Aligned with baresheet export-ignore conventions, extended with /tools for the updater.)
+/tests export-ignore
+/tools export-ignore
+/.github export-ignore
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/phpstan.neon export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/mago.toml export-ignore

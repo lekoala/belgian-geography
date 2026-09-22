@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace LeKoala\BelgianGeography\Tests;
+
+use LeKoala\BelgianGeography\Belgium;
+use LeKoala\BelgianGeography\Normalizer;
+use PHPUnit\Framework\TestCase;
+
+final class AliasTest extends TestCase
+{
+    public function test_every_alias_resolves_to_its_documented_municipality(): void
+    {
+        $belgium = Belgium::load();
+        $aliases = require dirname(__DIR__) . '/resources/aliases.php';
+
+        $this->assertCount(12, $aliases);
+
+        foreach ($aliases as $alias => $nisCode) {
+            $this->assertSame($alias, Normalizer::key($alias), "alias '{$alias}' must be pre-normalized");
+            $municipality = $belgium->municipalityByName($alias);
+            $this->assertNotNull($municipality, "alias '{$alias}' resolves");
+            $this->assertSame($nisCode, $municipality->nisCode, "alias '{$alias}' targets {$nisCode}");
+        }
+    }
+
+    public function test_brussels_variants_resolve_to_the_city_of_brussels(): void
+    {
+        $belgium = Belgium::load();
+
+        foreach (['Bruxelles', 'Brussel', 'Brussels', 'Brüssel'] as $name) {
+            $this->assertSame('21004', $belgium->municipalityByName($name)?->nisCode, $name);
+        }
+    }
+
+    public function test_english_exonyms_resolve_to_the_native_municipality(): void
+    {
+        $belgium = Belgium::load();
+
+        $this->assertSame('11002', $belgium->municipalityByName('Antwerp')?->nisCode);
+        $this->assertSame('11002', $belgium->municipalityByName('Antwerpen')?->nisCode);
+        $this->assertSame('44021', $belgium->municipalityByName('Ghent')?->nisCode);
+        $this->assertSame('44021', $belgium->municipalityByName('Gent')?->nisCode);
+    }
+
+    public function test_merged_tongeren_borgloon_keeps_its_french_exonym(): void
+    {
+        $belgium = Belgium::load();
+
+        $this->assertSame('73111', $belgium->municipalityByName('Tongres')?->nisCode);
+        $this->assertSame('73111', $belgium->municipalityByName('Tongeren-Borgloon')?->nisCode);
+    }
+}

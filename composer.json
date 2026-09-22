@@ -1,0 +1,58 @@
+{
+    "name": "lekoala/belgian-geography",
+    "description": "Compact, up-to-date Belgian postal codes, municipalities and multilingual place names.",
+    "keywords": [
+        "belgium",
+        "postal-code",
+        "municipality",
+        "geography",
+        "nis",
+        "best"
+    ],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "LeKoala",
+            "email": "thomas@lekoala.be"
+        }
+    ],
+    "require": {
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "carthage-software/mago": "^1",
+        "ext-zip": "*",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LeKoala\\BelgianGeography\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LeKoala\\BelgianGeography\\Tools\\": "tools/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@phpunit",
+            "@phpstan",
+            "@mago:lint",
+            "@mago:format"
+        ],
+        "phpunit": "@php -d zend.assertions=1 vendor/bin/phpunit",
+        "phpstan": "phpstan analyse src --memory-limit=-1",
+        "mago:lint": "mago lint --minimum-report-level warning src tests",
+        "mago:format": "mago fmt --check",
+        "fmt": "mago fmt",
+        "data:update": "@php tools/update-data.php"
+    },
+    "config": {
+        "sort-packages": true,
+        "preferred-install": "dist"
+    },
+    "prefer-stable": true
+}
