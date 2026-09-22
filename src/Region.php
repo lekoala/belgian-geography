@@ -12,6 +12,7 @@ final readonly class Region implements JsonSerializable
     public function __construct(
         public string $isoCode,
         public array $names,
+        public ?Coordinates $coordinates = null,
     ) {}
 
     public function name(string $locale): ?string
@@ -31,16 +32,21 @@ final readonly class Region implements JsonSerializable
         return $this->names['nl'];
     }
 
-    /** @return array{isoCode:string,names:array{nl:string,fr:string,en:string}} */
+    /** @return array{isoCode:string,names:array{nl:string,fr:string,en:string},coordinates?:array{latitude:float,longitude:float}} */
     public function toArray(): array
     {
-        return [
+        $data = [
             'isoCode' => $this->isoCode,
             'names' => $this->names,
         ];
+        if ($this->coordinates !== null) {
+            $data['coordinates'] = $this->coordinates->toArray();
+        }
+
+        return $data;
     }
 
-    /** @return array{isoCode:string,names:array{nl:string,fr:string,en:string}} */
+    /** @return array{isoCode:string,names:array{nl:string,fr:string,en:string},coordinates?:array{latitude:float,longitude:float}} */
     public function jsonSerialize(): array
     {
         return $this->toArray();

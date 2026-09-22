@@ -1,4 +1,4 @@
 EPSG:3812_x,EPSG:3812_y,EPSG:4326_lat,EPSG:4326_lon,address_id,box_number,house_number,municipality_id,municipality_name_de,municipality_name_fr,municipality_name_nl,postcode,postname_fr,postname_nl,street_id,streetname_de,streetname_fr,streetname_nl,region_code,status
-,,,,1,,1,11002,,Anvers,Antwerpen,2000,,ANTWERPEN,s1,,,Straat,BE-VLG,current
-,,,,2,,2,11002,,Anvers,Antwerpen,2000,,ANTWERPEN,s2,,,Straat,BE-VLG,current
-,,,,3,,3,31005,,Bruges,Brugge,8000,BRUGES,BRUGGE/Koolkerke,s3,,,Straat,BE-VLG,current
+,,51.2194,4.4025,1,,1,11002,,Anvers,Antwerpen,2000,,ANTWERPEN,s1,,,Straat,BE-VLG,current
+,,51.2200,4.4050,2,,2,11002,,Anvers,Antwerpen,2000,,ANTWERPEN,s2,,,Straat,BE-VLG,current
+,,51.2093,3.2247,3,,3,31005,,Bruges,Brugge,8000,BRUGES,BRUGGE/Koolkerke,s3,,,Straat,BE-VLG,current

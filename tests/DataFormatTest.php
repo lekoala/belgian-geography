@@ -53,6 +53,18 @@ final class DataFormatTest extends TestCase
         $this->assertSame('BE-WAL', $belgium->municipality('92094')?->region);
     }
 
+    public function test_a_snapshot_without_centers_has_null_coordinates(): void
+    {
+        $file = $this->writeSnapshot([
+            'schema_version' => DataLoader::SCHEMA_VERSION,
+            'meta' => [],
+            'municipalities' => ['92094' => ['BE-WAL', ['fr' => 'Namur']]],
+            'postal_places' => [],
+        ]);
+
+        $this->assertNull(Belgium::load($file, false)->municipality('92094')?->coordinates);
+    }
+
     public function test_an_unsupported_schema_version_is_rejected(): void
     {
         $file = $this->writeSnapshot([

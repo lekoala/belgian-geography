@@ -17,8 +17,12 @@ $sources = [
     'BE-WAL' => 'https://opendata.bosa.be/download/best/openaddress-bewal.zip',
 ];
 
-$options = getopt('', ['output::', 'source-dir::']);
+$options = getopt('', ['output::', 'output-centers::', 'source-dir::']);
 $output = $options['output'] ?? dirname(__DIR__) . '/resources/data.php';
+$centersOutput = $options['output-centers'] ?? null;
+if ($centersOutput === null) {
+    $centersOutput = dirname($output) . '/centers.php';
+}
 $sourceDir = $options['source-dir'] ?? null;
 $tempDir = sys_get_temp_dir() . '/belgian-geography-' . bin2hex(random_bytes(5));
 if (!mkdir($tempDir, 0777, true) && !is_dir($tempDir)) {
@@ -97,11 +101,22 @@ try {
         throw new RuntimeException(sprintf('Could not write %s.', $output));
     }
 
+    $centers = $generator->buildCenters($metadata);
+    $centersContents = Exporter::exportCenters($centers);
+    if (file_put_contents($centersOutput, $centersContents) === false) {
+        throw new RuntimeException(sprintf('Could not write %s.', $centersOutput));
+    }
+
     fwrite(STDOUT, sprintf(
         "Wrote %s (%d municipalities, %d postal codes).\n",
         $output,
         count($data['municipalities']),
         count($data['postal_places']),
+    ));
+    fwrite(STDOUT, sprintf(
+        "Wrote %s (%d municipality centers).\n",
+        $centersOutput,
+        count($centers['municipalities']),
     ));
 } finally {
     if ($sourceDir === null && is_dir($tempDir)) {

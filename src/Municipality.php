@@ -12,6 +12,7 @@ final readonly class Municipality implements JsonSerializable
         public string $nisCode,
         public string $region,
         public LocalizedName $names,
+        public ?Coordinates $coordinates = null,
     ) {}
 
     public function name(string $locale): ?string
@@ -24,17 +25,22 @@ final readonly class Municipality implements JsonSerializable
         return $this->names->displayName($locale, ...$fallbacks);
     }
 
-    /** @return array{nisCode:string,region:string,names:array<string,string>} */
+    /** @return array{nisCode:string,region:string,names:array<string,string>,coordinates?:array{latitude:float,longitude:float}} */
     public function toArray(): array
     {
-        return [
+        $data = [
             'nisCode' => $this->nisCode,
             'region' => $this->region,
             'names' => $this->names->toArray(),
         ];
+        if ($this->coordinates !== null) {
+            $data['coordinates'] = $this->coordinates->toArray();
+        }
+
+        return $data;
     }
 
-    /** @return array{nisCode:string,region:string,names:array<string,string>} */
+    /** @return array{nisCode:string,region:string,names:array<string,string>,coordinates?:array{latitude:float,longitude:float}} */
     public function jsonSerialize(): array
     {
         return $this->toArray();

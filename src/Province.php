@@ -13,6 +13,7 @@ final readonly class Province implements JsonSerializable
         public string $isoCode,
         public string $region,
         public array $names,
+        public ?Coordinates $coordinates = null,
     ) {}
 
     public function name(string $locale): ?string
@@ -32,17 +33,22 @@ final readonly class Province implements JsonSerializable
         return $this->names['nl'];
     }
 
-    /** @return array{isoCode:string,region:string,names:array{nl:string,fr:string,en:string}} */
+    /** @return array{isoCode:string,region:string,names:array{nl:string,fr:string,en:string},coordinates?:array{latitude:float,longitude:float}} */
     public function toArray(): array
     {
-        return [
+        $data = [
             'isoCode' => $this->isoCode,
             'region' => $this->region,
             'names' => $this->names,
         ];
+        if ($this->coordinates !== null) {
+            $data['coordinates'] = $this->coordinates->toArray();
+        }
+
+        return $data;
     }
 
-    /** @return array{isoCode:string,region:string,names:array{nl:string,fr:string,en:string}} */
+    /** @return array{isoCode:string,region:string,names:array{nl:string,fr:string,en:string},coordinates?:array{latitude:float,longitude:float}} */
     public function jsonSerialize(): array
     {
         return $this->toArray();

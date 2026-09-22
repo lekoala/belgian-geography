@@ -6,6 +6,7 @@ namespace LeKoala\BelgianGeography\Tools;
 
 use LeKoala\BelgianGeography\DataLoader;
 use LeKoala\BelgianGeography\Normalizer;
+use LeKoala\BelgianGeography\ReferenceData;
 use RuntimeException;
 
 final class Generator
@@ -15,6 +16,9 @@ final class Generator
 
     /** @var array<string, array<string, array{municipality:string,region:string,names:array<string,string>}>> */
     private array $postalPlaces = [];
+
+    /** @var array<string, array{sumLat:float,sumLon:float,count:int}> */
+    private array $municipalityPoints = [];
 
     /** @param resource $stream */
     public function ingestAddressCsv($stream, string $expectedRegion): void
@@ -45,6 +49,10 @@ final class Generator
                 throw new RuntimeException(sprintf('Missing expected BeST OpenAddresses column "%s".', $column));
             }
         }
+
+        // Coordinates are optional: fixtures and third-party snapshots may omit
+        // them. The address export normally carries EPSG:4326_lat / _lon.
+        $hasCoordinates = array_key_exists('EPSG:4326_lat', $index) && array_key_exists('EPSG:4326_lon', $index);
 
         while (($row = fgetcsv($stream, null, ',', '"', '\\')) !== false) {
             $value = static fn (string $column): string => trim((string) ($row[$index[$column]] ?? ''));
@@ -79,6 +87,9 @@ final class Generator
                 continue;
             }
             $this->mergeMunicipality($nisCode, $region, $municipalityNames);
+            if ($hasCoordinates) {
+                $this->accumulatePoint($nisCode, $value('EPSG:4326_lat'), $value('EPSG:4326_lon'));
+            }
 
             // The flat BOSA/OpenAddresses export already folds the regional
             // municipality-part fallback into postname_{fr,nl}. When no postal
@@ -139,6 +150,65 @@ final class Generator
             ],
             'municipalities' => $municipalities,
             'postal_places' => $postalPlaces,
+        ];
+    }
+
+    /**
+     * Aggregates one address point into its municipality. Invalid, out-of-range
+     * or inverted coordinates are ignored: a malformed or swapped value must
+     * never silently contaminate a mean.
+     */
+    private function accumulatePoint(string $nisCode, string $rawLat, string $rawLon): void
+    {
+        if (!is_numeric($rawLat) || !is_numeric($rawLon)) {
+            return;
+        }
+        $lat = (float) $rawLat;
+        $lon = (float) $rawLon;
+        if (!is_finite($lat) || !is_finite($lon) || $lat <= 49.0 || $lat >= 52.0 || $lon <= 2.0 || $lon >= 7.0) {
+            return;
+        }
+
+        $this->municipalityPoints[$nisCode] ??= ['sumLat' => 0.0, 'sumLon' => 0.0, 'count' => 0];
+        $this->municipalityPoints[$nisCode]['sumLat'] += $lat;
+        $this->municipalityPoints[$nisCode]['sumLon'] += $lon;
+        ++$this->municipalityPoints[$nisCode]['count'];
+    }
+
+    /**
+     * Approximate municipality center: the mean of the current BeST address
+     * points, plus the contributing point count. The count is kept so higher
+     * levels (province, region) can be recomposed as the true barycenter of all
+     * underlying addresses without persisting them.
+     *
+     * @param array<string, array{url:string,sha256:string}> $sources
+     * @return array<string, mixed>
+     */
+    public function buildCenters(array $sources = []): array
+    {
+        ksort($this->municipalityPoints, SORT_STRING);
+
+        $municipalities = [];
+        foreach ($this->municipalityPoints as $nisCode => $points) {
+            if ($points['count'] < 1) {
+                continue;
+            }
+            $municipalities[$nisCode] = [
+                round($points['sumLat'] / $points['count'], 5),
+                round($points['sumLon'] / $points['count'], 5),
+                $points['count'],
+            ];
+        }
+
+        return [
+            'schema_version' => ReferenceData::CENTERS_SCHEMA_VERSION,
+            'meta' => [
+                'generated_at' => gmdate(DATE_ATOM),
+                'source' => 'FPS BOSA BeST Address - OpenAddresses CSV exports',
+                'license' => 'CC BY 4.0',
+                'sources' => $sources,
+            ],
+            'municipalities' => $municipalities,
         ];
     }
 

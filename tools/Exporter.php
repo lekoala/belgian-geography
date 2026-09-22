@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LeKoala\BelgianGeography\Tools;
 
 use LeKoala\BelgianGeography\DataLoader;
+use LeKoala\BelgianGeography\ReferenceData;
 
 /**
  * Compact PHP exporter for the generated snapshot: short array syntax with
@@ -28,6 +29,26 @@ final class Exporter
             }
             $out .= "],\n";
         }
+
+        return $out . "];\n";
+    }
+
+    /**
+     * Exports the generated centers companion (resources/centers.php):
+     * a map of municipality NIS code to [latitude, longitude, address count].
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function exportCenters(array $data): string
+    {
+        $out = "<?php\n\ndeclare(strict_types=1);\n\nreturn [\n";
+        $out .= "'schema_version' => " . self::scalar($data['schema_version'] ?? ReferenceData::CENTERS_SCHEMA_VERSION) . ",\n";
+        $out .= "'meta' => " . self::block($data['meta'] ?? [], 1) . ",\n";
+        $out .= "'municipalities' => [\n";
+        foreach ($data['municipalities'] ?? [] as $key => $row) {
+            $out .= '  ' . self::scalar($key) . ' => ' . self::inline($row) . ",\n";
+        }
+        $out .= "],\n";
 
         return $out . "];\n";
     }

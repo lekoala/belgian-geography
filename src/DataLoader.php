@@ -24,6 +24,7 @@ final class DataLoader
      *   meta: array<string, mixed>,
      *   municipalities: array<string, array{string, array<string,string|null>}>,
      *   postal_places: array<string, list<array{string, array<string,string|null>}>>,
+     *   centers: array<string, array{0:float,1:float,2:int}>,
      *   aliases: array<string,string>,
      *   provinces: array<string, array{region:string,prefixes:list<string>,names:array{nl:string,fr:string,en:string}}>,
      *   regions: array<string, array{names:array{nl:string,fr:string,en:string}}>
@@ -70,6 +71,7 @@ final class DataLoader
             'meta' => $cleanMeta,
             'municipalities' => $cleanMunicipalities,
             'postal_places' => self::cleanPostalPlaces($postalPlaces, $file, $cleanMunicipalities),
+            'centers' => ReferenceData::centers($file, $usePackagedReferences),
             'aliases' => ReferenceData::aliases($file, $usePackagedReferences),
             'provinces' => ReferenceData::provinces($file, $usePackagedReferences),
             'regions' => ReferenceData::regions($file, $usePackagedReferences),

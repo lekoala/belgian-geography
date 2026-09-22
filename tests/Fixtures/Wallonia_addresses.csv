@@ -1,5 +1,5 @@
 EPSG:3812_x,EPSG:3812_y,EPSG:4326_lat,EPSG:4326_lon,address_id,box_number,house_number,municipality_id,municipality_name_de,municipality_name_fr,municipality_name_nl,postcode,postname_fr,postname_nl,street_id,streetname_de,streetname_fr,streetname_nl,region_code,status
-,,,,1,,1,62063,Lüttich,Liège,Luik,4000,LIÈGE,,s1,,Rue,,BE-WAL,current
-,,,,2,,2,92094,,Namur,Namen,5000,NAMUR,,s2,,Rue,,BE-WAL,current
-,,,,3,,3,92094,,Namur,Namen,5100,JAMBES,,s3,,Rue,,BE-WAL,current
-,,,,4,,4,92094,,Namur,Namen,5100,JAMBES,,s4,,Rue,,BE-WAL,retired
+,,50.6326,5.5797,1,,1,62063,Lüttich,Liège,Luik,4000,LIÈGE,,s1,,Rue,,BE-WAL,current
+,,50.4669,4.8675,2,,2,92094,,Namur,Namen,5000,NAMUR,,s2,,Rue,,BE-WAL,current
+,,50.4570,4.8730,3,,3,92094,,Namur,Namen,5100,JAMBES,,s3,,Rue,,BE-WAL,current
+,,50.0000,4.0000,4,,4,92094,,Namur,Namen,5100,JAMBES,,s4,,Rue,,BE-WAL,retired

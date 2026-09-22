@@ -63,10 +63,12 @@ final class SerializationTest extends TestCase
 
         $region = $belgium->region('BE-BRU');
         $this->assertNotNull($region);
-        $this->assertSame(
-            ['isoCode' => 'BE-BRU', 'names' => ['nl' => 'Brussel', 'fr' => 'Bruxelles', 'en' => 'Brussels']],
-            $region->toArray(),
-        );
+        $regionArray = $region->toArray();
+        $this->assertSame('BE-BRU', $regionArray['isoCode']);
+        $this->assertSame(['nl' => 'Brussel', 'fr' => 'Bruxelles', 'en' => 'Brussels'], $regionArray['names']);
+        $this->assertArrayHasKey('coordinates', $regionArray);
+        $this->assertIsFloat($regionArray['coordinates']['latitude']);
+        $this->assertIsFloat($regionArray['coordinates']['longitude']);
 
         $province = $belgium->province('BE-WNA');
         $this->assertNotNull($province);

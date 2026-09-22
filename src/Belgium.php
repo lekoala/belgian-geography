@@ -29,6 +29,8 @@ final class Belgium
     /** @var array<string, Region> ISO 3166-2 code => region */
     private array $regions = [];
 
+    private ?MunicipalityCoordinates $municipalityCoordinates = null;
+
     /** @var array<string, string> NIS prefix (2 digits) => ISO 3166-2 code */
     private array $provincePrefixIndex = [];
 
@@ -40,6 +42,7 @@ final class Belgium
      *   meta?: array<string, mixed>,
      *   municipalities?: array<string, array{string, array<string,string|null>}>,
      *   postal_places?: array<string, list<array{string, array<string,string|null>}>>,
+     *   centers?: array<string, array{0:float,1:float,2:int}>,
      *   aliases?: array<string,string>,
      *   provinces?: array<string, array{region:string,prefixes:list<string>,names:array{nl:string,fr:string,en:string}}>,
      *   regions?: array<string, array{names:array{nl:string,fr:string,en:string}}>
@@ -48,7 +51,7 @@ final class Belgium
     public function __construct(array $data)
     {
         $this->metadata = $data['meta'] ?? [];
-        $this->indexMunicipalities($data['municipalities'] ?? []);
+        $this->indexMunicipalities($data['municipalities'] ?? [], $data['centers'] ?? []);
         $this->indexAliases($data['aliases'] ?? []);
         $this->indexProvinces($data['provinces'] ?? []);
         $this->indexRegions($data['regions'] ?? []);
@@ -266,12 +269,21 @@ final class Belgium
 
     /**
      * @param array<string, array{string, array<string,string|null>}> $municipalities
+     * @param array<string, array{0:float,1:float,2:int}> $centers
      */
-    private function indexMunicipalities(array $municipalities): void
+    private function indexMunicipalities(array $municipalities, array $centers): void
     {
+        $coordinatesIndex = [];
         foreach ($municipalities as $nisCode => $row) {
             [$region, $names] = $row;
-            $municipality = new Municipality((string) $nisCode, $region, new LocalizedName($names));
+            $nisCode = (string) $nisCode;
+            $coordinates = null;
+            if (array_key_exists($nisCode, $centers)) {
+                $center = $centers[$nisCode];
+                $coordinates = new Coordinates($center[0], $center[1]);
+                $coordinatesIndex[$nisCode] = [$coordinates, $center[2], $region];
+            }
+            $municipality = new Municipality($nisCode, $region, new LocalizedName($names), $coordinates);
             $this->municipalities[$municipality->nisCode] = $municipality;
 
             foreach ($municipality->names->aliases() as $alias) {
@@ -281,6 +293,7 @@ final class Belgium
                 }
             }
         }
+        $this->municipalityCoordinates = new MunicipalityCoordinates($coordinatesIndex);
     }
 
     /** @param array<string,string> $aliases */
@@ -308,7 +321,12 @@ final class Belgium
     {
         foreach ($provinces as $isoCode => $row) {
             $isoCode = (string) $isoCode;
-            $this->provinces[$isoCode] = new Province($isoCode, $row['region'], $row['names']);
+            $this->provinces[$isoCode] = new Province(
+                $isoCode,
+                $row['region'],
+                $row['names'],
+                $this->municipalityCoordinates?->forPrefixes($row['prefixes']),
+            );
             foreach ($row['prefixes'] as $prefix) {
                 $this->provincePrefixIndex[$prefix] ??= $isoCode;
             }
@@ -320,7 +338,11 @@ final class Belgium
     {
         foreach ($regions as $isoCode => $row) {
             $isoCode = (string) $isoCode;
-            $this->regions[$isoCode] = new Region($isoCode, $row['names']);
+            $this->regions[$isoCode] = new Region(
+                $isoCode,
+                $row['names'],
+                $this->municipalityCoordinates?->forRegion($isoCode),
+            );
         }
     }
 

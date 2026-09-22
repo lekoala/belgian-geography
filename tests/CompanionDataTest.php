@@ -7,6 +7,8 @@ namespace LeKoala\BelgianGeography\Tests;
 use InvalidArgumentException;
 use LeKoala\BelgianGeography\Belgium;
 use LeKoala\BelgianGeography\DataLoader;
+use LeKoala\BelgianGeography\Exception\DataNotGenerated;
+use LeKoala\BelgianGeography\ReferenceData;
 use PHPUnit\Framework\TestCase;
 
 final class CompanionDataTest extends TestCase
@@ -42,6 +44,51 @@ final class CompanionDataTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         Belgium::load($file);
+    }
+
+    public function test_a_centers_companion_is_loaded(): void
+    {
+        $file = $this->writePartialSnapshot();
+        $this->writeCenters(['11002' => [51.2194, 4.4025, 7]]);
+
+        $coordinates = Belgium::load($file, false)->municipality('11002')?->coordinates;
+        $this->assertNotNull($coordinates);
+        $this->assertEqualsWithDelta(51.2194, $coordinates->latitude, 0.000_01);
+        $this->assertEqualsWithDelta(4.4025, $coordinates->longitude, 0.000_01);
+    }
+
+    public function test_centers_for_unknown_municipalities_are_ignored(): void
+    {
+        $file = $this->writePartialSnapshot();
+        $this->writeCenters(['99999' => [50.0, 4.0, 5]]);
+
+        $this->assertNull(Belgium::load($file, false)->municipality('11002')?->coordinates);
+    }
+
+    public function test_an_invalid_centers_companion_is_rejected(): void
+    {
+        $file = $this->writePartialSnapshot();
+        file_put_contents(
+            dirname($file) . '/centers.php',
+            "<?php return ['schema_version' => 99, 'municipalities' => []];",
+        );
+
+        $this->expectException(DataNotGenerated::class);
+        Belgium::load($file, false);
+    }
+
+    /** @param array<string, array{0:float,1:float,2:int}> $municipalities */
+    private function writeCenters(array $municipalities): void
+    {
+        $data = [
+            'schema_version' => ReferenceData::CENTERS_SCHEMA_VERSION,
+            'meta' => [],
+            'municipalities' => $municipalities,
+        ];
+        self::assertTrue(
+            file_put_contents($this->directory . '/centers.php', '<?php return ' . var_export($data, true) . ';')
+            !== false,
+        );
     }
 
     private function writePartialSnapshot(): string

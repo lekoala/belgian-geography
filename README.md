@@ -80,8 +80,30 @@ echo $be->provinceForMunicipality('21004');            // null: Brussels is a re
 echo $be->municipality('92094')?->displayName('de', 'fr'); // Namur
 
 echo json_encode($be->municipality('92094'));
-// {"nisCode":"92094","region":"BE-WAL","names":{"nl":"Namen","fr":"Namur","de":"Namur"}}
+// {"nisCode":"92094","region":"BE-WAL","names":{"nl":"Namen","fr":"Namur","de":"Namur"},"coordinates":{"latitude":50.42305,"longitude":4.77892}}
 ```
+
+### Centering a map
+
+Every municipality exposes an approximate center so a map can be centered without
+geocoding anything. Province and region centers are recomposed from the same
+points:
+
+```php
+$city = $be->municipalityByName('Luik');
+echo $city?->coordinates?->latitude;  // 50.63…
+echo $city?->coordinates?->longitude; // 5.58…
+
+$be->province('BE-VAN')?->coordinates; // approximate province center
+$be->region('BE-WAL')?->coordinates;   // approximate region center
+```
+
+Each point is an **approximate municipality center derived from current BeST
+address points**: the arithmetic mean of the addresses' WGS84 coordinates,
+rounded to 5 decimal places. Province and region centers are the same barycenter
+of every underlying address, weighted by each municipality's contributing address
+count. They are meant to place a marker or fit a view — not a cadastral,
+administrative or geometric centroid, and still not an address/geocoder.
 
 ### Searching names: one result or several
 
@@ -180,6 +202,7 @@ The public model is deliberately small:
 - `Province`: ISO 3166-2 code, region code, trilingual names (`nl`, `fr`, `en`)
 - `Region`: ISO 3166-2 code and trilingual names (`BE-VLG`, `BE-BRU`, `BE-WAL`)
 - `LocalizedName`: current names keyed by `nl`, `fr`, `de`
+- `Coordinates`: optional WGS84 latitude/longitude of an approximate center
 
 The snapshot stores a region once per municipality. A locality carries no region
 of its own: `PostalPlace::$region` is derived from the referenced municipality at
@@ -204,7 +227,26 @@ Locality label casing is preserved from the source: BeST publishes some Flemish
 municipality is `Halle`). The library does not rewrite proper names; all lookups
 are case- and accent-insensitive, and `placeLabel()` offers a cleaned display
 label when the locality name matches its municipality (see Display labels).
-Streets, coordinates and full addresses are deliberately out of scope for v0.x.
+Street-level addresses and geocoding remain out of scope for v0.x: the library
+only ships an approximate municipality center (see Centering a map).
+
+### Coordinates companion
+
+`resources/data.php` stays the raw derived BeST snapshot and carries no computed
+coordinate. Approximate municipality centers live in a separate generated
+companion, `resources/centers.php`, with its own `schema_version`:
+
+```php
+'municipalities' => [
+    '11002' => [51.214_72, 4.419_97, 344_247], // latitude, longitude, address count
+],
+```
+
+It is optional: a custom snapshot without a `centers.php` simply yields `null`
+coordinates, while the package ships centers for every municipality. The address
+count is internal — it lets the province and region centers be recomposed as the
+barycenter of the underlying addresses at load time. `data.php` must never
+contain computed data.
 
 ### Partial / custom snapshots
 
@@ -217,8 +259,9 @@ packaged references apply.
 
 ## Updating the bundled data
 
-Source checkouts can regenerate `resources/data.php` directly from the three weekly
-BOSA CSV archives:
+Source checkouts can regenerate `resources/data.php` and the
+`resources/centers.php` companion directly from the three weekly BOSA CSV
+archives:
 
 ```bash
 composer data:update
@@ -230,7 +273,7 @@ The updater downloads:
 - `openaddress-bebru.zip`
 - `openaddress-bewal.zip`
 
-It scans only current address rows from `openaddress-be*.csv` to derive the compact municipality/postal-place relation, then discards street, house-number and coordinate data. Large BeST source
+It scans only current address rows from `openaddress-be*.csv` to derive the compact municipality/postal-place relation, and separately aggregates the `EPSG:4326` address points into the approximate municipality centers written to `resources/centers.php` (out-of-range points are ignored). It discards street and house-number data. Large BeST source
 files never become part of the Composer package.
 
 `ext-zip` is needed only for this maintainer command, not at runtime.
@@ -264,7 +307,9 @@ This package intentionally does **not** provide:
 
 - street/address autocomplete,
 - geocoding,
-- map coordinates,
+- exact geometry: only an approximate municipality center (and province/region
+  centers recomposed from it) is provided, never polygons, bounding boxes,
+  distances or cadastral coordinates,
 - a manually curated list of old/archaic spellings (only current alternate
   names attested on Wikipedia are aliased, see Design).
 

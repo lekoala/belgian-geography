@@ -31,6 +31,55 @@ final class SnapshotIntegrityTest extends TestCase
         $this->assertSame([], $problems);
     }
 
+    public function test_the_packaged_snapshot_has_a_center_for_every_municipality(): void
+    {
+        $belgium = Belgium::load();
+
+        $missing = [];
+        foreach ($belgium->municipalities() as $municipality) {
+            if ($municipality->coordinates !== null) {
+                continue;
+            }
+
+            $missing[] = $municipality->nisCode;
+        }
+
+        $this->assertSame([], $missing);
+    }
+
+    public function test_packaged_coordinates_stay_within_belgium_bounds(): void
+    {
+        $belgium = Belgium::load();
+
+        $points = [];
+        foreach ($belgium->municipalities() as $municipality) {
+            $points[$municipality->nisCode] = $municipality->coordinates;
+        }
+        foreach ($belgium->provinces() as $province) {
+            $points[$province->isoCode] = $province->coordinates;
+        }
+        foreach ($belgium->regions() as $region) {
+            $points[$region->isoCode] = $region->coordinates;
+        }
+
+        $outOfBounds = [];
+        foreach ($points as $key => $coordinates) {
+            if ($coordinates === null) {
+                continue;
+            }
+            if (
+                $coordinates->latitude <= 49.0
+                || $coordinates->latitude >= 52.0
+                || $coordinates->longitude <= 2.0
+                || $coordinates->longitude >= 7.0
+            ) {
+                $outOfBounds[] = $key;
+            }
+        }
+
+        $this->assertSame([], $outOfBounds);
+    }
+
     public function test_every_postal_place_is_consistent_with_its_municipality(): void
     {
         $belgium = Belgium::load();
