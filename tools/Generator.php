@@ -14,11 +14,33 @@ final class Generator
     /** @var array<string, array{region:string,names:array<string,string>}> */
     private array $municipalities = [];
 
-    /** @var array<string, array<string, array{municipality:string,region:string,names:array<string,string>}>> */
+    /**
+     * Address points farther than this from the median point of their
+     * municipality are wrong coordinates, not part of it: the largest Belgian
+     * municipalities stay well within this radius of their median.
+     */
+    public const float OUTLIER_RADIUS_KM = 30.0;
+
+    /** Grid cell size used to aggregate address points (about 1 km). */
+    private const float CELL_DEGREES = 0.01;
+
+    /**
+     * Every spelling seen for a postal place, with its number of addresses.
+     *
+     * @var array<string, array<string, array{municipality:string,spellings:array<string,int>}>>
+     */
     private array $postalPlaces = [];
 
-    /** @var array<string, array{sumLat:float,sumLon:float,count:int}> */
+    /**
+     * Address points aggregated per grid cell: sums stay exact, so the mean of
+     * the kept points does not depend on the cell size.
+     *
+     * @var array<string, array<string, array{sumLat:float,sumLon:float,count:int}>>
+     */
     private array $municipalityPoints = [];
+
+    /** @var array<string, int> NIS => address points rejected as outliers by the last buildCenters() */
+    private array $outliers = [];
 
     /** @param resource $stream */
     public function ingestAddressCsv($stream, string $expectedRegion): void
@@ -97,11 +119,13 @@ final class Generator
             // Combined labels ("BRUGGE/Koolkerke") are split: every part is a
             // real postal locality, grouped across locales by normalized key.
             foreach ($this->splitPostNames($value('postname_nl'), $value('postname_fr'), $municipalityNames) as $placeNames) {
+                // Spellings of the same place ("Halle"/"HALLE") share a key; the
+                // most frequent one wins (see build()).
                 $placeKey = $nisCode . '|' . $this->nameKey($placeNames);
-                $this->postalPlaces[$postalCode][$placeKey] = [
-                    'municipality' => $nisCode,
-                    'names' => $placeNames,
-                ];
+                $spelling = json_encode($placeNames, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+                $place = $this->postalPlaces[$postalCode][$placeKey] ?? ['municipality' => $nisCode, 'spellings' => []];
+                $place['spellings'][$spelling] = ($place['spellings'][$spelling] ?? 0) + 1;
+                $this->postalPlaces[$postalCode][$placeKey] = $place;
             }
         }
     }
@@ -122,7 +146,13 @@ final class Generator
 
         $postalPlaces = [];
         foreach ($this->postalPlaces as $code => $places) {
-            $rows = array_values($places);
+            $rows = array_map(
+                static fn(array $place): array => [
+                    'municipality' => $place['municipality'],
+                    'names' => self::mostFrequentSpelling($place['spellings']),
+                ],
+                array_values($places),
+            );
             usort($rows, static function (array $a, array $b): int {
                 $byMunicipality = strcmp($a['municipality'], $b['municipality']);
                 if ($byMunicipality !== 0) {
@@ -168,15 +198,121 @@ final class Generator
             return;
         }
 
-        $this->municipalityPoints[$nisCode] ??= ['sumLat' => 0.0, 'sumLon' => 0.0, 'count' => 0];
-        $this->municipalityPoints[$nisCode]['sumLat'] += $lat;
-        $this->municipalityPoints[$nisCode]['sumLon'] += $lon;
-        ++$this->municipalityPoints[$nisCode]['count'];
+        $cell = (int) floor($lat / self::CELL_DEGREES) . ':' . (int) floor($lon / self::CELL_DEGREES);
+        $this->municipalityPoints[$nisCode][$cell] ??= ['sumLat' => 0.0, 'sumLon' => 0.0, 'count' => 0];
+        $this->municipalityPoints[$nisCode][$cell]['sumLat'] += $lat;
+        $this->municipalityPoints[$nisCode][$cell]['sumLon'] += $lon;
+        ++$this->municipalityPoints[$nisCode][$cell]['count'];
+    }
+
+    /**
+     * Address points rejected as outliers by the last buildCenters(), per
+     * municipality (only municipalities with at least one rejected point).
+     *
+     * @return array<string, int>
+     */
+    public function outliers(): array
+    {
+        return $this->outliers;
+    }
+
+    /**
+     * @param array<string, int> $spellings JSON-encoded names => address count
+     * @return array<string, string>
+     */
+    private static function mostFrequentSpelling(array $spellings): array
+    {
+        // Highest count first; ties are broken on the spelling itself so the
+        // result never depends on the order of the source rows.
+        uksort($spellings, static fn(string $a, string $b): int => [$spellings[$b], $a] <=> [$spellings[$a], $b]);
+        $decoded = json_decode((string) array_key_first($spellings), true, 512, JSON_THROW_ON_ERROR);
+
+        $names = [];
+        foreach (is_array($decoded) ? $decoded : [] as $locale => $name) {
+            if (is_string($name)) {
+                $names[(string) $locale] = $name;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Mean of the cells within OUTLIER_RADIUS_KM of the weighted median point.
+     *
+     * @param array<string, array{sumLat:float,sumLon:float,count:int}> $cells
+     * @return array{float, float, int, int} latitude, longitude, kept points, rejected points
+     */
+    private static function robustMean(array $cells): array
+    {
+        $medianLat = self::weightedMedian($cells, 'sumLat');
+        $medianLon = self::weightedMedian($cells, 'sumLon');
+        $kmPerDegreeLon = 111.32 * cos(deg2rad($medianLat));
+
+        $sumLat = 0.0;
+        $sumLon = 0.0;
+        $kept = 0;
+        $rejected = 0;
+        foreach ($cells as $cell) {
+            $distance = hypot(
+                ($cell['sumLat'] / $cell['count'] - $medianLat) * 111.32,
+                ($cell['sumLon'] / $cell['count'] - $medianLon) * $kmPerDegreeLon,
+            );
+            if ($distance > self::OUTLIER_RADIUS_KM) {
+                $rejected += $cell['count'];
+                continue;
+            }
+            $sumLat += $cell['sumLat'];
+            $sumLon += $cell['sumLon'];
+            $kept += $cell['count'];
+        }
+
+        if ($kept === 0) {
+            // Scattered clusters with no point near the median: there is no
+            // reliable core, so fall back to the plain mean of every point.
+            $sumLat = array_sum(array_column($cells, 'sumLat'));
+            $sumLon = array_sum(array_column($cells, 'sumLon'));
+            $kept = $rejected;
+            $rejected = 0;
+        }
+
+        return [$sumLat / $kept, $sumLon / $kept, $kept, $rejected];
+    }
+
+    /**
+     * Weighted median of one coordinate over the cells (each cell at the mean of
+     * its points, weighted by its point count).
+     *
+     * @param array<string, array{sumLat:float,sumLon:float,count:int}> $cells
+     * @param 'sumLat'|'sumLon' $sum
+     */
+    private static function weightedMedian(array $cells, string $sum): float
+    {
+        $values = [];
+        $total = 0;
+        foreach ($cells as $cell) {
+            $values[] = [$cell[$sum] / $cell['count'], $cell['count']];
+            $total += $cell['count'];
+        }
+        usort($values, static fn(array $a, array $b): int => $a[0] <=> $b[0]);
+
+        $seen = 0;
+        $median = 0.0;
+        foreach ($values as [$median, $count]) {
+            $seen += $count;
+            if ($seen * 2 >= $total) {
+                break;
+            }
+        }
+
+        return $median;
     }
 
     /**
      * Approximate municipality center: the mean of the current BeST address
-     * points, plus the contributing point count. The count is kept so higher
+     * points, plus the contributing point count. Points farther than
+     * OUTLIER_RADIUS_KM from the municipality's median point are wrong
+     * coordinates and do not contribute (see outliers()). The count is kept so higher
      * levels (province, region) can be recomposed as the true barycenter of all
      * underlying addresses without persisting them.
      *
@@ -188,15 +324,13 @@ final class Generator
         ksort($this->municipalityPoints, SORT_STRING);
 
         $municipalities = [];
-        foreach ($this->municipalityPoints as $nisCode => $points) {
-            if ($points['count'] < 1) {
-                continue;
+        $this->outliers = [];
+        foreach ($this->municipalityPoints as $nisCode => $cells) {
+            [$latitude, $longitude, $kept, $rejected] = self::robustMean($cells);
+            $municipalities[$nisCode] = [round($latitude, 5), round($longitude, 5), $kept];
+            if ($rejected > 0) {
+                $this->outliers[$nisCode] = $rejected;
             }
-            $municipalities[$nisCode] = [
-                round($points['sumLat'] / $points['count'], 5),
-                round($points['sumLon'] / $points['count'], 5),
-                $points['count'],
-            ];
         }
 
         return [

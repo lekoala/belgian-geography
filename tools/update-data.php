@@ -118,6 +118,14 @@ try {
         $centersOutput,
         count($centers['municipalities']),
     ));
+    foreach ($generator->outliers() as $nisCode => $count) {
+        fwrite(STDOUT, sprintf(
+            "  %s: %d address point(s) ignored, farther than %d km from the municipality's median point.\n",
+            $nisCode,
+            $count,
+            (int) Generator::OUTLIER_RADIUS_KM,
+        ));
+    }
 } finally {
     if ($tempDir !== null && is_dir($tempDir)) {
         foreach (glob($tempDir . '/*') ?: [] as $file) {

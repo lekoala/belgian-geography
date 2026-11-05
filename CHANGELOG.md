@@ -23,6 +23,14 @@ listed under **Changed** or **Removed**.
 
 - The data generator trims underscores around BeST labels: every address of
   4020 carried `Liège_` in the November 2026 export.
+- The data generator keeps the most frequent spelling of a locality (ties
+  broken on the spelling itself) instead of the last one read, so a single
+  mistyped address can no longer rename a locality, and the result does not
+  depend on the order of the rows.
+- Municipality centers ignore address points farther than 30 km from the
+  municipality's median point: a wrong coordinate inside Belgium's bounding box
+  can no longer pull a center away. `tools/update-data.php` lists the ignored
+  points (6 single addresses in the November 2026 export).
 
 ### Added
 
