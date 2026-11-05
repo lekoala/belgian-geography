@@ -16,9 +16,16 @@ declare(strict_types=1);
  * municipalities — native name per region: nl in Flanders, fr in Wallonia,
  * co-official fr/nl in Brussels — plus the usual short forms of Brussels
  * municipalities) AND missing from the generated BeST snapshot
- * (verified with tools/check-alias-coverage.php). Archaic spellings
- * (aerschot-era variants, blankenberghe, rethy, …) are deliberately excluded:
- * they belong to consuming applications.
+ * (verified with tools/check-alias-coverage.php).
+ *
+ * French exonyms of Flemish municipalities (Coxyde, Thourout, Wervicq, …) are
+ * names in another language, not old spellings: they are kept, tagged "fr" in
+ * the comment. Archaic Dutch spellings (aerschot-era variants, blankenberghe,
+ * calmpthout, cortenbergh, rethy, …) are deliberately excluded: they belong to
+ * consuming applications.
+ *
+ * Names of former (merged) municipalities are not aliases: they live in
+ * resources/former.php.
  *
  * Alias values are NIS codes, never names: identity stays on the NIS code.
  * At load time an alias is registered only when its key is NOT already indexed
@@ -52,4 +59,16 @@ return [
     'tongres' => '73111', // search alias for Tongeren-Borgloon (merged 2025)
     'welkenraat' => '63084', // search alias for Welkenraedt
     'welkenrath' => '63084', // search alias for Welkenraedt
+    // French exonyms of Flemish municipalities (fr).
+    'ardoye' => '37020', // fr: Ardooie
+    'beringue' => '71004', // fr: Beringen
+    'coxyde' => '38014', // fr: Koksijde
+    'hautemsaintlievin' => '41063', // fr: Sint-Lievens-Houtem
+    'laethemsaintmartin' => '44064', // fr: Sint-Martens-Latem
+    'lecoq' => '35029', // fr: De Haan
+    'puerssaintamand' => '12041', // fr: Puurs-Sint-Amands
+    'saintlaurent' => '43014', // fr: Sint-Laureins
+    'thourout' => '31033', // fr: Torhout
+    'wavresaintecatherine' => '12035', // fr: Sint-Katelijne-Waver
+    'wervicq' => '33029', // fr: Wervik
 ];

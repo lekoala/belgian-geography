@@ -67,6 +67,38 @@ final class PlacesTest extends TestCase
         $this->assertSame($best, SupplementaryPlaces::merge($best, $best));
     }
 
+    public function test_a_supplement_completes_the_missing_locales_of_a_best_place(): void
+    {
+        $best = ['8958' => [['33039', ['nl' => 'Loker']]]];
+        $supplements = ['8958' => [['33039', ['nl' => 'Lokr', 'fr' => 'Locre']]], '8959' => []];
+
+        // No shared name: a new place.
+        $this->assertCount(2, SupplementaryPlaces::merge($best, $supplements)['8958']);
+
+        $supplements = ['8958' => [['33039', ['nl' => 'LOKER', 'fr' => 'Locre']]]];
+        // Shared name: the BeST place keeps its spelling and gains the French name.
+        $this->assertSame(
+            ['8958' => [['33039', ['nl' => 'Loker', 'fr' => 'Locre']]]],
+            SupplementaryPlaces::merge($best, $supplements),
+        );
+    }
+
+    public function test_heuvelland_and_enghien_localities_carry_both_names(): void
+    {
+        $belgium = Belgium::load();
+
+        $locre = $belgium->postalPlacesByName('Locre');
+        $this->assertCount(1, $locre);
+        $this->assertSame('8958', $locre[0]->postalCode);
+        $this->assertSame('Loker', $locre[0]->name('nl'));
+        $this->assertSame('Locre', $locre[0]->name('fr'));
+        $this->assertCount(1, $belgium->postalCode('8958')?->places() ?? []);
+
+        $lettelingen = $belgium->postalPlacesByName('Lettelingen');
+        $this->assertCount(1, $lettelingen);
+        $this->assertSame('Petit-Enghien', $lettelingen[0]->name('fr'));
+    }
+
     public function test_a_supplement_cannot_create_a_postal_relation(): void
     {
         $this->expectException(InvalidArgumentException::class);

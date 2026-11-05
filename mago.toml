@@ -26,9 +26,9 @@ single-class-per-file = { enabled = false }
 excessive-parameter-list = { enabled = false }
 # Belgium centralizes the whole lookup model (indexes + generated-data validation):
 # threshold raised so the linter does not force an artificial split.
-cyclomatic-complexity = { threshold = 55 }
+cyclomatic-complexity = { threshold = 57 }
 kan-defect = { threshold = 5 }
-too-many-methods = { threshold = 30 }
+too-many-methods = { threshold = 31 }
 halstead = { effort-threshold = 7000, difficulty-threshold = 20 }
 
 [analyzer]

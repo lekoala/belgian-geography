@@ -12,8 +12,10 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
  * restitute through postname_*, such as 1020 Laeken in the City of Brussels.
  *
  * A supplement only names a locality of an existing BeST relation (postal code
- * + municipality): it never creates a relation, and it is inert as soon as BeST
- * publishes one of its names for that relation.
+ * + municipality): it never creates a relation. When it shares a name with a
+ * BeST place of that relation, it is the same locality: the supplement only
+ * fills the locales BeST leaves empty (8958 Loker gets its French name Locre)
+ * and never overrides a BeST name. It is inert once BeST publishes all of them.
  *
  * @internal
  */
@@ -52,16 +54,35 @@ final class SupplementaryPlaces
         foreach ($supplements as $code => $rows) {
             $code = (string) $code;
             foreach ($rows as [$nisCode, $names]) {
-                $published = self::publishedNames($postalPlaces[$code] ?? [], $nisCode);
-                if ($published === []) {
+                $related = false;
+                $match = null;
+                $keys = self::keys($names);
+                foreach ($postalPlaces[$code] ?? [] as $index => [$placeNisCode, $placeNames]) {
+                    if ($placeNisCode !== $nisCode) {
+                        continue;
+                    }
+                    $related = true;
+                    if ($match === null && array_intersect_key($keys, self::keys($placeNames)) !== []) {
+                        $match = $index;
+                    }
+                }
+                if (!$related) {
                     throw new InvalidArgumentException(sprintf(
                         'Supplementary place for postal code "%s" references municipality "%s", which BeST does not relate to it.',
                         $code,
                         $nisCode,
                     ));
                 }
-                if (array_intersect_key(self::keys($names), $published) === []) {
+                if ($match === null) {
                     $postalPlaces[$code][] = [$nisCode, $names];
+                    continue;
+                }
+                // Same locality as a BeST place: only fill the locales BeST leaves empty.
+                foreach ($names as $locale => $name) {
+                    $published = $postalPlaces[$code][$match][1][$locale] ?? null;
+                    if ($published === null || trim($published) === '') {
+                        $postalPlaces[$code][$match][1][$locale] = $name;
+                    }
                 }
             }
         }
@@ -88,25 +109,6 @@ final class SupplementaryPlaces
         }
 
         return [$nisCode, $cleanNames];
-    }
-
-    /**
-     * Normalized names BeST publishes for this municipality under a postal code;
-     * empty when BeST does not relate them at all.
-     *
-     * @param list<array{string, array<string,string|null>}> $places
-     * @return array<string, true>
-     */
-    private static function publishedNames(array $places, string $nisCode): array
-    {
-        $keys = [];
-        foreach ($places as [$placeNisCode, $placeNames]) {
-            if ($placeNisCode === $nisCode) {
-                $keys += self::keys($placeNames);
-            }
-        }
-
-        return $keys;
     }
 
     /**

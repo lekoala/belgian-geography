@@ -8,7 +8,8 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
 
 /**
  * Loads the hand-maintained companion layers (resources/aliases.php,
- * resources/places.php, resources/provinces.php and resources/regions.php),
+ * resources/former.php, resources/places.php, resources/provinces.php and
+ * resources/regions.php),
  * looking next to the snapshot file first and falling back to the packaged
  * resources. The generated centers companion is the exception: it is only read
  * next to the snapshot (see centers()).
@@ -93,6 +94,19 @@ final class ReferenceData
         }
 
         return $aliases;
+    }
+
+    /**
+     * Former (merged) municipalities (resources/former.php), keyed by the NIS
+     * code of the municipality that absorbed them.
+     *
+     * @return array<string, list<array<string,string>>>
+     */
+    public static function former(string $dataFile, bool $usePackagedReferences = true): array
+    {
+        $formerFile = self::resolveCompanionFile($dataFile, 'former.php', $usePackagedReferences);
+
+        return $formerFile === null ? [] : FormerMunicipalities::clean(require $formerFile, $formerFile);
     }
 
     /**

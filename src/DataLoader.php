@@ -9,7 +9,8 @@ use LeKoala\BelgianGeography\Exception\DataNotGenerated;
 /**
  * Reads and validates the generated snapshot (resources/data.php) together
  * with the hand-maintained layers (resources/aliases.php,
- * resources/places.php, resources/provinces.php and resources/regions.php).
+ * resources/former.php, resources/places.php, resources/provinces.php and
+ * resources/regions.php).
  * Supplementary places are merged into postal_places here, so Belgium indexes
  * them as ordinary PostalPlace objects.
  *
@@ -28,6 +29,7 @@ final class DataLoader
      *   postal_places: array<string, list<array{string, array<string,string|null>}>>,
      *   centers: array<string, array{0:float,1:float,2:int}>,
      *   aliases: array<string,string>,
+     *   former: array<string, list<array<string,string>>>,
      *   provinces: array<string, array{region:string,prefixes:list<string>,names:array{nl:string,fr:string,en:string}}>,
      *   regions: array<string, array{names:array{nl:string,fr:string,en:string}}>
      * }
@@ -78,6 +80,7 @@ final class DataLoader
             ),
             'centers' => ReferenceData::centers($file),
             'aliases' => ReferenceData::aliases($file, $usePackagedReferences),
+            'former' => ReferenceData::former($file, $usePackagedReferences),
             'provinces' => ReferenceData::provinces($file, $usePackagedReferences),
             'regions' => ReferenceData::regions($file, $usePackagedReferences),
         ];

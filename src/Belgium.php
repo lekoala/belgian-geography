@@ -44,6 +44,7 @@ final class Belgium
      *   postal_places?: array<string, list<array{string, array<string,string|null>}>>,
      *   centers?: array<string, array{0:float,1:float,2:int}>,
      *   aliases?: array<string,string>,
+     *   former?: array<string, list<array<string,string>>>,
      *   provinces?: array<string, array{region:string,prefixes:list<string>,names:array{nl:string,fr:string,en:string}}>,
      *   regions?: array<string, array{names:array{nl:string,fr:string,en:string}}>
      * } $data
@@ -51,7 +52,9 @@ final class Belgium
     public function __construct(array $data)
     {
         $this->metadata = $data['meta'] ?? [];
-        $this->indexMunicipalities($data['municipalities'] ?? [], $data['centers'] ?? []);
+        $this->indexMunicipalities($data['municipalities'] ?? [], $data['centers'] ?? [], $data['former'] ?? []);
+        // Former names are indexed like search aliases, and before them.
+        $this->indexAliases(FormerMunicipalities::searchKeys($data['former'] ?? []));
         $this->indexAliases($data['aliases'] ?? []);
         $this->indexProvinces($data['provinces'] ?? []);
         $this->indexRegions($data['regions'] ?? []);
@@ -139,10 +142,12 @@ final class Belgium
     /**
      * Display label for a locality. When the locality name is the same word as
      * its municipality name in the same locale (case aside), the municipality
-     * spelling is reused for presentation; the source spelling stays available
-     * through PostalPlace::name()/displayName(). Only the requested locale and
-     * the explicit fallbacks are used: returns null when none is available, with
-     * no implicit locale policy.
+     * spelling is reused for presentation, and likewise for the name of a former
+     * municipality merged into it (1540 "HERNE" => "Herne"). Any other name BeST
+     * publishes in capitals is shown in title case, acronyms aside. The source
+     * spelling stays available through PostalPlace::name()/displayName(). Only
+     * the requested locale and the explicit fallbacks are used: returns null when
+     * none is available, with no implicit locale policy.
      */
     public function placeLabel(PostalPlace $place, string $locale, string ...$fallbacks): ?string
     {
@@ -157,14 +162,32 @@ final class Belgium
             return null;
         }
 
-        $name = $place->names->get($resolved);
-        $municipality = $this->municipalities[$place->municipalityNisCode] ?? null;
-        $municipalityName = $municipality?->name($resolved);
-        if ($name !== null && $municipalityName !== null && strcasecmp($name, $municipalityName) === 0) {
-            return $municipalityName;
-        }
+        return PlaceLabel::label($place, $resolved, $this->municipalities[$place->municipalityNisCode] ?? null);
+    }
 
-        return $name;
+    /**
+     * Approximate center for a postal code: the center of one of its
+     * municipalities. When the code covers several municipalities (1040, 1050 and
+     * 1060 are shared by the City of Brussels and Etterbeek, Ixelles or
+     * Saint-Gilles), the first municipality matching a preferred name wins, names
+     * being tried in order. A name matches a municipality when it is one of its
+     * current names, search aliases or former names, or the name of one of its
+     * localities under this code. Without a match, the first municipality with
+     * coordinates is used. Returns null for an unknown code or when no
+     * municipality of the code has coordinates.
+     */
+    public function centerForPostalCode(string|int $code, string ...$preferredNames): ?Coordinates
+    {
+        $postalCode = $this->postalCode($code);
+
+        return $postalCode === null
+            ? null
+            : PostalCodeCenter::pick(
+                $postalCode,
+                $this->municipalitiesForPostalCode($postalCode->code),
+                fn(string $name): array => $this->municipalityNameIndex[Normalizer::key($name)] ?? [],
+                array_values($preferredNames),
+            );
     }
 
     /** @return list<Municipality> */
@@ -271,8 +294,9 @@ final class Belgium
     /**
      * @param array<string, array{string, array<string,string|null>}> $municipalities
      * @param array<string, array{0:float,1:float,2:int}> $centers
+     * @param array<string, list<array<string,string>>> $former
      */
-    private function indexMunicipalities(array $municipalities, array $centers): void
+    private function indexMunicipalities(array $municipalities, array $centers, array $former): void
     {
         $coordinatesIndex = [];
         foreach ($municipalities as $nisCode => $row) {
@@ -284,7 +308,16 @@ final class Belgium
                 $coordinates = new Coordinates($center[0], $center[1]);
                 $coordinatesIndex[$nisCode] = [$coordinates, $center[2], $region];
             }
-            $municipality = new Municipality($nisCode, $region, new LocalizedName($names), $coordinates);
+            $municipality = new Municipality(
+                $nisCode,
+                $region,
+                new LocalizedName($names),
+                $coordinates,
+                array_map(
+                    static fn(array $former): LocalizedName => new LocalizedName($former),
+                    $former[$nisCode] ?? [],
+                ),
+            );
             $this->municipalities[$municipality->nisCode] = $municipality;
 
             foreach ($municipality->names->aliases() as $alias) {

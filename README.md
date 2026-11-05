@@ -31,9 +31,19 @@ in NL and FR, and `73111` as *Tongeren-Borgloon* / *Tongres-Looz*, so `aerschot`
 or `tongres` remain search aliases rather than current names. An entry is kept
 only when it is a plausible search spelling *and* missing from BeST (verified with
 `tools/check-alias-coverage.php`); at load time a search alias never shadows a
-current BeST name, and one already covered by BeST is simply inert. Archaic
-spellings stay out: historical SEO slugs such as an obsolete spelling belong to
-the application that served them, not to a current Belgian reference library.
+current BeST name, and one already covered by BeST is simply inert. French
+exonyms of Flemish municipalities (`Coxyde`, `Thourout`, `Wervicq`, …) are names in
+another language and are kept. Archaic Dutch spellings (`blankenberghe`,
+`calmpthout`, `rethy`, …) stay out: historical SEO slugs such as an obsolete
+spelling belong to the application that served them, not to a current Belgian
+reference library.
+
+`resources/former.php` lists the **former municipalities** absorbed by the 2019
+and 2025 mergers (Borgloon/Looz and Tongeren/Tongres into Tongeren-Borgloon,
+Borsbeek into Antwerpen, …). Their names are searchable like aliases and never
+shadow a current BeST name, so `municipalityByName('Borgloon')` resolves to
+`73111`; they are exposed as `Municipality::$formerNames` and never returned by
+`name()`.
 
 `resources/places.php` is a second, even smaller hand-maintained layer of
 **supplementary postal places**: current localities BeST does not restitute
@@ -41,8 +51,11 @@ through its `postname_*` fields. For 1020, 1120 and 1130 BeST only publishes
 `BRUXELLES/BRUSSEL`, while the City of Brussels and bpost identify these postal
 areas as Laeken/Laken, Neder-Over-Heembeek and Haren. These are real
 `PostalPlace` objects, not aliases, and never municipalities. A supplement may only
-name a locality of a postal code / municipality relation BeST already has, and it
-is inert once BeST publishes one of its names for that relation.
+name a locality of a postal code / municipality relation BeST already has. The same
+file also completes BeST places with the names BeST leaves empty: French names of
+Flemish localities (8958 Loker / Locre) and Dutch names of Walloon ones (7850
+Petit-Enghien / Lettelingen). A row that shares a name with a BeST place only fills
+its empty locales and never overrides a BeST name, so a BeST fix makes it inert.
 
 ## Install
 
@@ -94,6 +107,11 @@ echo $be->province('BE-VWV')?->name('en'); // West Flanders
 echo $be->regionForMunicipality('21004')?->name('fr'); // Bruxelles
 echo $be->provinceForMunicipality('21004');            // null: Brussels is a region, not a province
 
+// Name in the language of the municipality's area: nl in Flanders, fr in
+// Wallonia, de in the nine German-speaking municipalities, null in Brussels.
+echo $be->municipality('38014')?->localName(); // Koksijde
+echo $be->municipality('63040')?->localName(); // Kelmis
+
 // Fallback-aware label for UI: only the requested locale and the explicit
 // fallbacks are used (name() stays strict, and no implicit locale is added):
 echo $be->municipality('92094')?->displayName('de', 'fr'); // Namur
@@ -124,6 +142,17 @@ of every underlying address, weighted by each municipality's contributing addres
 count. They are meant to place a marker or fit a view — not a cadastral,
 administrative or geometric centroid, and still not an address/geocoder.
 
+A postal code has no center of its own: `centerForPostalCode()` returns the
+center of one of its municipalities. Only 1040, 1050 and 1060 are shared (City of
+Brussels and Etterbeek, Ixelles or Saint-Gilles), so pass the name the user
+searched to pick the right one. Current names, aliases, former names and locality
+names of the code all match; without a match, the first municipality is used:
+
+```php
+$be->centerForPostalCode('1050', 'Ixelles'); // center of Ixelles, not of the City of Brussels
+$be->centerForPostalCode('8670');            // center of Koksijde
+```
+
 ### Searching names: one result or several
 
 For user-facing search, resolve against `municipalitiesByName()` and handle the
@@ -150,8 +179,11 @@ echo $be->municipalityByName('Namen')?->nisCode; // 92094 (single match)
 
 Search is case- and accent-insensitive. For presentation, `placeLabel()` reuses
 the municipality spelling when the locality name is the same word as its
-municipality in the same locale; otherwise the source spelling is kept. The raw
-source label stays available through `name()` / `displayName()`:
+municipality in the same locale, then the spelling of a former municipality merged
+into it (1540 `HERNE` → `Herne`). Any other name BeST publishes in capitals is
+shown in title case (`BEVEREN-WAAS` → `Beveren-Waas`), acronyms such as `SHAPE`
+aside; mixed-case names keep the source spelling. The raw source label stays
+available through `name()` / `displayName()`:
 
 ```php
 $halle = $be->postalPlacesByName('Halle')[0]; // postal code 1500
@@ -215,7 +247,8 @@ matters. `municipalitiesForPostalCode()` therefore returns a list.
 
 The public model is deliberately small:
 
-- `Municipality`: NIS code, region code, multilingual names
+- `Municipality`: NIS code, region code, multilingual names, names of the former
+  municipalities merged into it, and `localName()` (name in the area's language)
 - `PostalCode`: a four-digit code and its current postal places
 - `PostalPlace`: postal code + municipality + multilingual locality/postal name
 - `Province`: ISO 3166-2 code, region code, trilingual names (`nl`, `fr`, `en`)
@@ -246,7 +279,7 @@ Locality label casing is preserved from the source: BeST publishes some Flemish
 `postname_*` values in all caps (`HALLE` for postal code `1500`, whose
 municipality is `Halle`). The library does not rewrite proper names; all lookups
 are case- and accent-insensitive, and `placeLabel()` offers a cleaned display
-label when the locality name matches its municipality (see Display labels).
+label (see Display labels).
 Street-level addresses and geocoding remain out of scope for v0.x: the library
 only ships an approximate municipality center (see Centering a map).
 
@@ -273,7 +306,7 @@ underlying addresses at load time. `data.php` must never contain computed data.
 ### Partial / custom snapshots
 
 `Belgium::load($path, usePackagedReferences: false)` loads a snapshot without
-falling back to the packaged `aliases.php` / `places.php` / `provinces.php` / `regions.php`.
+falling back to the packaged `aliases.php` / `former.php` / `places.php` / `provinces.php` / `regions.php`.
 Companion files placed next to the snapshot are still loaded. This keeps
 fixtures and partial datasets (which may not contain every municipality the
 packaged alias layer references) loadable; with the default `true`, those
@@ -336,8 +369,9 @@ This package intentionally does **not** provide:
 - exact geometry: only an approximate municipality center (and province/region
   centers recomposed from it) is provided, never polygons, bounding boxes,
   distances or cadastral coordinates,
-- a curated list of reference names: only search aliases are added, never names
-  of record, and old/archaic spellings stay out (see Design).
+- a curated list of reference names: only search aliases, former municipality
+  names and missing locality names are added, never municipality names of record,
+  and old/archaic spellings stay out (see Design).
 
 Those concerns can be added by separate packages or application code if a real use case
 appears. The goal here is a boring, reliable Belgian reference layer.

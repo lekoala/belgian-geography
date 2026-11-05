@@ -29,12 +29,30 @@ final class PlaceLabelTest extends TestCase
         $herne = $belgium->postalPlacesByName('Herne')[0] ?? null;
         $this->assertNotNull($herne);
         $this->assertSame('HERNE', $herne->name('nl'));
-        $this->assertSame('HERNE', $belgium->placeLabel($herne, 'nl'));
+        // Its display label reuses the spelling of the former municipality.
+        $this->assertSame('Herne', $belgium->placeLabel($herne, 'nl'));
 
         // 2980 "Halle" is a locality of Zoersel; its graphy is already mixed case.
         $zoersel = $belgium->postalCode('2980')?->places()[0] ?? null;
         $this->assertNotNull($zoersel);
         $this->assertSame('Halle', $belgium->placeLabel($zoersel, 'nl'));
+    }
+
+    public function test_display_label_fixes_other_capitalized_names(): void
+    {
+        $belgium = Belgium::load();
+
+        $label = static fn(string $code, string $locale): array => array_map(
+            static fn($place): ?string => $belgium->placeLabel($place, $locale),
+            $belgium->postalCode($code)?->places() ?? [],
+        );
+
+        // Former municipality, with the source spelling of the former name.
+        $this->assertContains('De Pinte', $label('9840', 'nl'));
+        // No known spelling: title case.
+        $this->assertContains('Beveren-Waas', $label('9120', 'nl'));
+        // Acronyms stay as they are.
+        $this->assertContains('SHAPE', $label('7010', 'fr'));
     }
 
     public function test_display_label_falls_back_across_locales(): void
