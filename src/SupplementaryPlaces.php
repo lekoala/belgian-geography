@@ -78,12 +78,14 @@ final class SupplementaryPlaces
                     continue;
                 }
                 // Same locality as a BeST place: only fill the locales BeST leaves empty.
+                [$placeNisCode, $placeNames] = $postalPlaces[$code][$match];
                 foreach ($names as $locale => $name) {
-                    $published = $postalPlaces[$code][$match][1][$locale] ?? null;
+                    $published = $placeNames[$locale] ?? null;
                     if ($published === null || trim($published) === '') {
-                        $postalPlaces[$code][$match][1][$locale] = $name;
+                        $placeNames[$locale] = $name;
                     }
                 }
+                $postalPlaces[$code][$match] = [$placeNisCode, $placeNames];
             }
         }
 

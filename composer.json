@@ -23,7 +23,7 @@
     "require-dev": {
         "carthage-software/mago": "^1",
         "ext-zip": "*",
-        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan": "^2.3.5",
         "phpunit/phpunit": "^12.0"
     },
     "autoload": {
