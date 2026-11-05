@@ -53,6 +53,22 @@ final class GeneratorTest extends TestCase
         );
     }
 
+    public function test_underscores_around_labels_are_trimmed(): void
+    {
+        $generator = new Generator();
+        $generator->ingestAddressCsv($this->stream('62063,Lüttich,Liège,Luik,4020,Liège_,,BE-WAL,current'), 'BE-WAL');
+        $generator->ingestAddressCsv(
+            $this->stream('21004,,Bruxelles,Brussel,1000,_BRUXELLES/Laeken_,BRUSSEL_,BE-BRU,current'),
+            'BE-BRU',
+        );
+
+        $places = $generator->build()['postal_places'];
+        $this->assertSame([['62063', ['fr' => 'Liège']]], $places[4020]);
+        $names = array_merge(...array_map(static fn(array $place): array => array_values($place[1]), $places[1000]));
+        sort($names);
+        $this->assertSame(['BRUSSEL', 'BRUXELLES', 'Laeken'], $names);
+    }
+
     /** @return resource */
     private function stream(string ...$rows)
     {

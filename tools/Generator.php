@@ -265,7 +265,7 @@ final class Generator
         $groups = [];
         foreach (['nl' => $nl, 'fr' => $fr] as $locale => $label) {
             foreach (explode('/', $label) as $part) {
-                $part = trim($part);
+                $part = self::cleanLabel($part);
                 $key = $part === '' ? '' : Normalizer::key($part);
                 if ($key === '') {
                     continue;
@@ -277,11 +277,22 @@ final class Generator
         return $groups === [] ? [$municipalityNames] : array_values($groups);
     }
 
+    /**
+     * BeST occasionally publishes data-entry artefacts around a label (every
+     * address of 4020 carried "Liège_" in November 2026). An underscore is never
+     * part of a Belgian place name, so it is trimmed with the whitespace.
+     */
+    private static function cleanLabel(string $label): string
+    {
+        return trim($label, " \t\n\r\0\x0B_");
+    }
+
     /** @return array<string, string> */
     private function names(string $nl, string $fr, string $de): array
     {
         $names = [];
         foreach (['nl' => $nl, 'fr' => $fr, 'de' => $de] as $locale => $name) {
+            $name = self::cleanLabel($name);
             if ($name !== '') {
                 $names[$locale] = $name;
             }

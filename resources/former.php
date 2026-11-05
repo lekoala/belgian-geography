@@ -20,7 +20,7 @@ declare(strict_types=1);
  * Names follow the same locale keys as the snapshot. A locale is only given when
  * the former municipality had a name of its own in it (Borgloon/Looz).
  *
- * Last reviewed against BeST snapshot: 2026-09-22.
+ * Last reviewed against BeST snapshot: 2026-11-05.
  *
  * @return array<string, list<array<string,string>>> NIS code => former names
  */

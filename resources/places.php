@@ -31,7 +31,7 @@ declare(strict_types=1);
  * Only localities with a postal identity of their own belong here; this is not
  * a list of neighbourhoods or historical sections.
  *
- * Last reviewed against BeST snapshot: 2026-09-22.
+ * Last reviewed against BeST snapshot: 2026-11-05.
  *
  * @return array<string, list<array{string, array<string,string>}>>
  */

@@ -39,7 +39,7 @@ declare(strict_types=1);
  * Brussel (NIS 21004, City of Brussels) — not one of the 18 other Brussels
  * municipalities.
  *
- * Last reviewed against BeST snapshot: 2026-09-22.
+ * Last reviewed against BeST snapshot: 2026-11-05.
  *
  * @return array<string, string> normalized search alias => NIS code
  */
@@ -47,6 +47,7 @@ return [
     'aerschot' => '24001', // search alias for Aarschot
     'antwerp' => '11002', // search alias for Antwerpen
     'arel' => '81001', // search alias for Arlon
+    'bastnach' => '82039', // search alias for Bastogne (de; BeST dropped it in November 2026)
     'bleiberg' => '63088', // search alias for Plombières
     'blieberg' => '63088', // search alias for Plombières
     'brussels' => '21004', // intl. search alias for the City of Brussels (Bruxelles/Brussel)

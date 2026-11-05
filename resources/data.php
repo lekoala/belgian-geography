@@ -10,15 +10,15 @@ return [
   'sources' => [
     'BE-VLG' => [
       'url' => 'https://opendata.bosa.be/download/best/openaddress-bevlg.zip',
-      'sha256' => '82811ccff850e63421267b3b44ad5e9a249e03020177d2a5c8a46108ec25b58e',
+      'sha256' => '726c123fa990c034bae6e971899ec100736d122f81976f383629902f303117fd',
     ],
     'BE-BRU' => [
       'url' => 'https://opendata.bosa.be/download/best/openaddress-bebru.zip',
-      'sha256' => '849736a4399692516015865551560edb635ca7463f0f05488b985f58f20f5e79',
+      'sha256' => 'd4e6d02dfbca93ef73fff73375296ea85a2859908b848fe3b761e072d2ea6903',
     ],
     'BE-WAL' => [
       'url' => 'https://opendata.bosa.be/download/best/openaddress-bewal.zip',
-      'sha256' => 'ffb535f11a52b76fe0ee328ed3b0ef69c39d1f287118fe8f46e3661b425a3042',
+      'sha256' => '99fccd185e8c6767ed92de855510d799630e553e319e6351322853a5e82c7d7b',
     ],
   ],
 ],
@@ -518,7 +518,7 @@ return [
   82036 => ['BE-WAL', ['nl' => 'Vaux-sur-Sûre', 'fr' => 'Vaux-sur-Sûre', 'de' => 'Vaux-sur-Sûre']],
   82037 => ['BE-WAL', ['nl' => 'Gouvy', 'fr' => 'Gouvy', 'de' => 'Gouvy']],
   82038 => ['BE-WAL', ['nl' => 'Sainte-Ode', 'fr' => 'Sainte-Ode', 'de' => 'Sainte-Ode']],
-  82039 => ['BE-WAL', ['nl' => 'Bastenaken', 'fr' => 'Bastogne', 'de' => 'Bastnach']],
+  82039 => ['BE-WAL', ['nl' => 'Bastenaken', 'fr' => 'Bastogne', 'de' => 'Bastogne']],
   83012 => ['BE-WAL', ['nl' => 'Durbuy', 'fr' => 'Durbuy', 'de' => 'Durbuy']],
   83013 => ['BE-WAL', ['nl' => 'Erezée', 'fr' => 'Erezée', 'de' => 'Erezée']],
   83028 => ['BE-WAL', ['nl' => 'Hotton', 'fr' => 'Hotton', 'de' => 'Hotton']],
@@ -1340,7 +1340,7 @@ return [
   6852 => [['84050', ['fr' => 'Maissin']], ['84050', ['fr' => 'Opont']], ['84050', ['fr' => 'Oür']]],
   6853 => [['84050', ['fr' => 'Framont']]],
   6856 => [['84050', ['fr' => 'Fays-les-Veneurs']]],
-  6860 => [['84033', ['fr' => 'Assenois']], ['84033', ['fr' => 'Behême']], ['84033', ['fr' => 'Bernimont']], ['84033', ['fr' => 'Bombois']], ['84033', ['fr' => 'Burnaimont']], ['84033', ['fr' => 'Chevaudos']], ['84033', ['fr' => 'Chêne']], ['84033', ['fr' => 'Ebly']], ['84033', ['fr' => 'Gennevaux']], ['84033', ['fr' => 'Habaru']], ['84033', ['fr' => 'Lavaux']], ['84033', ['fr' => 'Les Fosses']], ['84033', ['fr' => 'Louftémont']], ['84033', ['fr' => 'Léglise']], ['84033', ['fr' => 'Maisoncelle']], ['84033', ['fr' => 'Mellier']], ['84033', ['fr' => 'Naleumont']], ['84033', ['fr' => 'Narcimont']], ['84033', ['fr' => 'Nivelet']], ['84033', ['fr' => 'Rancimont']], ['84033', ['fr' => 'Thibessart']], ['84033', ['fr' => 'Traimont']], ['84033', ['fr' => 'Vaux-lez-Chêne']], ['84033', ['fr' => 'Vlessart']], ['84033', ['fr' => 'Volaiville']], ['84033', ['fr' => 'Winville']], ['84033', ['fr' => 'Witry']], ['84033', ['fr' => 'Wittimont']]],
+  6860 => [['84033', ['fr' => 'Assenois']], ['84033', ['fr' => 'Behême']], ['84033', ['fr' => 'Bernimont']], ['84033', ['fr' => 'Bombois']], ['84033', ['fr' => 'Burnaimont']], ['84033', ['fr' => 'Chevaudos']], ['84033', ['fr' => 'Chêne']], ['84033', ['fr' => 'Ebly']], ['84033', ['fr' => 'Gennevaux']], ['84033', ['fr' => 'Habaru']], ['84033', ['fr' => 'Lavaux']], ['84033', ['fr' => 'Les Fossés']], ['84033', ['fr' => 'Louftémont']], ['84033', ['fr' => 'Léglise']], ['84033', ['fr' => 'Maisoncelle']], ['84033', ['fr' => 'Mellier']], ['84033', ['fr' => 'Naleumont']], ['84033', ['fr' => 'Narcimont']], ['84033', ['fr' => 'Nivelet']], ['84033', ['fr' => 'Rancimont']], ['84033', ['fr' => 'Thibessart']], ['84033', ['fr' => 'Traimont']], ['84033', ['fr' => 'Vaux-lez-Chêne']], ['84033', ['fr' => 'Vlessart']], ['84033', ['fr' => 'Volaiville']], ['84033', ['fr' => 'Winville']], ['84033', ['fr' => 'Witry']], ['84033', ['fr' => 'Wittimont']]],
   6870 => [['84059', ['fr' => 'Arville']], ['84059', ['fr' => 'Awenne']], ['84059', ['fr' => 'Hatrival']], ['84059', ['fr' => 'Lorcy']], ['84059', ['fr' => 'Mirwart']], ['84059', ['fr' => 'Poix']], ['84059', ['fr' => 'Saint-Hubert']], ['84059', ['fr' => 'Vesqueville']]],
   6880 => [['84009', ['fr' => 'Acremont']], ['84009', ['fr' => 'Assenois']], ['84009', ['fr' => 'Auby-sur-Semois']], ['84009', ['fr' => 'Bertrix']], ['84009', ['fr' => 'Biourge']], ['84009', ['fr' => 'Blanchoreille']], ['84009', ['fr' => 'Cugnon']], ['84009', ['fr' => 'Glaumont']], ['84009', ['fr' => 'Jehonville']], ['84009', ['fr' => 'Mortehan']], ['84009', ['fr' => 'Nevraumont']], ['84009', ['fr' => 'Orgeo']], ['84009', ['fr' => 'Rossart']], ['84009', ['fr' => 'Sart']]],
   6887 => [['84029', ['fr' => 'Herbeumont']], ['84029', ['fr' => 'Saint-Médard']], ['84029', ['fr' => 'Straimont']]],

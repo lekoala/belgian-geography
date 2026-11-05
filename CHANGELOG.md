@@ -9,6 +9,21 @@ listed under **Changed** or **Removed**.
 
 ## [Unreleased]
 
+### Data
+
+- BeST snapshot and municipality centers refreshed (2026-11-05).
+- BeST now publishes the German name of Bastogne as `Bastogne` instead of
+  `Bastnach`; `Bastnach` is kept as a search alias.
+- 6860 `Les Fosses` is now spelled `Les Fossés` (BeST fix).
+- The centers of Sainte-Ode (82038), Faimes (64025) and Olne (63057) were 70 to
+  140 km off because of wrong address coordinates in the previous export; they
+  are now correct. Other centers moved by a few meters.
+
+### Fixed
+
+- The data generator trims underscores around BeST labels: every address of
+  4020 carried `Liège_` in the November 2026 export.
+
 ### Added
 
 - `resources/former.php`: former municipalities absorbed by the 2019 and 2025
